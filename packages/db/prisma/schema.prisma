@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+enum Role {
+  SUPERADMIN
+  COMPLEX_ADMIN
+  NEIGHBORHOOD_ADMIN
+  SECURITY
+  OWNER
+}
+
+enum GateType {
+  MAIN_COMPLEX
+  INTERNAL_NEIGHBORHOOD
+}
+
+enum AccessStatus {
+  PENDING
+  IN_COMPLEX
+  IN_PROPERTY
+  EXITED
+  EXPIRED
+}
+
+// --- MODELOS ---
+model Complex {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  createdAt     DateTime       @default(now())
+  neighborhoods Neighborhood[]
+  gates         Gate[]
+  userRoles     UserRole[]
+}
+
+model Neighborhood {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  complexId String?  @db.Uuid
+  name      String
+  timezone  String   @default("America/Argentina/Buenos_Aires")
+  createdAt DateTime @default(now())
+
+  complex     Complex?     @relation(fields: [complexId], references: [id])
+  properties  Property[]
+  gates       Gate[]
+  userRoles   UserRole[]
+  invitations Invitation[]
+}
+
+model Property {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  neighborhoodId String   @db.Uuid
+  lotNumber      String
+  streetName     String?
+  createdAt      DateTime @default(now())
+
+  neighborhood Neighborhood @relation(fields: [neighborhoodId], references: [id])
+  userRoles    UserRole[]
+  invitations  Invitation[]
+
+  @@unique([neighborhoodId, lotNumber])
+}
+
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  roles       UserRole[]
+  shifts      Shift[]
+  invitations Invitation[] @relation("CreatedInvitations")
+  accessLogs  AccessLog[]  @relation("SecurityLogs")
+}
+
+model UserRole {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String  @db.Uuid
+  role           Role
+  complexId      String? @db.Uuid
+  neighborhoodId String? @db.Uuid
+  propertyId     String? @db.Uuid
+
+  user         User          @relation(fields: [userId], references: [id])
+  complex      Complex?      @relation(fields: [complexId], references: [id])
+  neighborhood Neighborhood? @relation(fields: [neighborhoodId], references: [id])
+  property     Property?     @relation(fields: [propertyId], references: [id])
+
+  @@index([userId])
+}
+
+model Shift {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @db.Uuid
+  gateId    String    @db.Uuid
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+  gate Gate @relation(fields: [gateId], references: [id])
+
+  @@index([userId, endedAt])
+  @@index([gateId])
+}
+
+model Gate {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  complexId      String?  @db.Uuid
+  neighborhoodId String?  @db.Uuid
+  name           String
+  type           GateType
+
+  complex      Complex?      @relation(fields: [complexId], references: [id])
+  neighborhood Neighborhood? @relation(fields: [neighborhoodId], references: [id])
+  accessLogs   AccessLog[]
+  shifts       Shift[]
+}
+
+model Invitation {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  neighborhoodId  String   @db.Uuid
+  propertyId      String   @db.Uuid
+  createdByUserId String   @db.Uuid
+  guestName       String
+  guestDni        String?
+  qrToken         String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  validFrom       DateTime
+  validTo         DateTime
+  isRevoked       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  neighborhood Neighborhood @relation(fields: [neighborhoodId], references: [id])
+  property     Property     @relation(fields: [propertyId], references: [id])
+  createdBy    User         @relation("CreatedInvitations", fields: [createdByUserId], references: [id])
+  accessLogs   AccessLog[]
+}
+
+model AccessLog {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invitationId   String?      @db.Uuid
+  gateId         String       @db.Uuid
+  securityUserId String       @db.Uuid
+  actionType     AccessStatus
+  timestamp      DateTime     @default(now())
+
+  invitation   Invitation? @relation(fields: [invitationId], references: [id])
+  gate         Gate        @relation(fields: [gateId], references: [id])
+  securityUser User        @relation("SecurityLogs", fields: [securityUserId], references: [id])
+}
