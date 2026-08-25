@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // --- ENUMS ---
@@ -51,6 +51,8 @@ model Neighborhood {
   gates       Gate[]
   userRoles   UserRole[]
   invitations Invitation[]
+
+  @@index([complexId])
 }
 
 model Property {
@@ -123,6 +125,9 @@ model Gate {
   neighborhood Neighborhood? @relation(fields: [neighborhoodId], references: [id])
   accessLogs   AccessLog[]
   shifts       Shift[]
+
+  @@index([complexId])
+  @@index([neighborhoodId])
 }
 
 model Invitation {
@@ -142,6 +147,10 @@ model Invitation {
   property     Property     @relation(fields: [propertyId], references: [id])
   createdBy    User         @relation("CreatedInvitations", fields: [createdByUserId], references: [id])
   accessLogs   AccessLog[]
+
+  @@index([neighborhoodId])
+  @@index([propertyId])
+  @@index([validFrom, validTo])
 }
 
 model AccessLog {
