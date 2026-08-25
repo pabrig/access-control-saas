@@ -1,15 +1,22 @@
-# Data Model (PostgreSQL + Prisma)
+# Data Model (PostgreSQL + Supabase)
+
+Identity is split: `auth.users` (Supabase Auth) and `public.profiles` (`id` references `auth.users`). Application tables use snake_case.
 
 ## Hierarchy of Main Entities
-1.  **Complex:** Optional grouping of neighborhoods (Master Plan).
-2.  **Neighborhood:** Primary tenant. Can belong to a Complex or be independent.
-3.  **Gate:** Physical control point linked to a Neighborhood or a Complex.
-4.  **Property:** Linked to a Neighborhood.
 
-## Prisma Schema (Base for AI agents)
-*(Include the Prisma code structure here)*
+1. **complexes:** Optional grouping of neighborhoods (master plan).
+2. **neighborhoods:** Primary tenant. Can belong to a complex or be independent.
+3. **gates:** Physical control point linked to a complex (`MAIN_COMPLEX`) or a neighborhood (`INTERNAL_NEIGHBORHOOD`).
+4. **properties:** Linked to a neighborhood.
+5. **user_roles:** Scoped RBAC assignment (`SUPERADMIN`, `COMPLEX_ADMIN`, `NEIGHBORHOOD_ADMIN`, `SECURITY`, `OWNER`).
+6. **shifts:** Active gate assignment for `SECURITY`.
+7. **invitations:** Guest QR (`qr_token` unique).
+8. **access_logs:** Movement history written by the validation API.
+
+Source of truth: [`supabase/migrations`](../supabase/migrations).
 
 ## Critical Indexes
-* Exact search by `qr_token` in the `Invitation` table.
-* Date range filters `valid_from` and `valid_to`.
-* Foreign keys indexed to ensure Multi-tenancy performance (`neighborhood_id`, `complex_id`).
+
+- Exact lookup by `invitations.qr_token`.
+- Date range `valid_from`, `valid_to`.
+- Foreign keys for tenancy: `neighborhood_id`, `complex_id`, `property_id`.
