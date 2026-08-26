@@ -26,7 +26,11 @@ app.post("/access/validate", async (req, res) => {
   const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
 
   if (!token) {
-    res.status(401).json({ ok: false, code: "UNAUTHENTICATED", message: "Missing bearer token" });
+    res.status(401).json({
+      ok: false,
+      code: "UNAUTHENTICATED",
+      message: "Missing bearer token",
+    });
     return;
   }
 
@@ -37,7 +41,9 @@ app.post("/access/validate", async (req, res) => {
   } = await userClient.auth.getUser();
 
   if (error || !user) {
-    res.status(401).json({ ok: false, code: "UNAUTHENTICATED", message: "Invalid session" });
+    res
+      .status(401)
+      .json({ ok: false, code: "UNAUTHENTICATED", message: "Invalid session" });
     return;
   }
 
@@ -58,7 +64,9 @@ app.post("/access/validate", async (req, res) => {
     res.json(result);
   } catch (cause) {
     console.error(cause);
-    res.status(500).json({ ok: false, code: "INTERNAL", message: "Validation failed" });
+    res
+      .status(500)
+      .json({ ok: false, code: "INTERNAL", message: "Validation failed" });
   }
 });
 

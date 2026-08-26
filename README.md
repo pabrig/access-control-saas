@@ -19,7 +19,7 @@ pnpm db:push
 pnpm db:seed
 ```
 
-3. Copy **Project URL**, **anon/publishable** and **service_role/secret** from *Project Settings → API* into:
+3. Copy **Project URL**, **anon/publishable** and **service_role/secret** from _Project Settings → API_ into:
 
 - `apps/web/.env.local`
 - `apps/api/.env`
