@@ -11,7 +11,7 @@ A SaaS platform for managing entries and exits in gated communities and real est
 - **Trusted API:** Node.js + Express (`apps/api`) for QR validation only.
 - **Database:** PostgreSQL via Supabase (Auth, Studio, native RLS).
 - **Types:** `@repo/db` generated/hand-maintained `Database` types.
-- **Infrastructure:** Turborepo monorepo. Local stack: `supabase start`.
+- **Infrastructure:** Turborepo monorepo. Database: hosted Supabase (optional local `supabase start`).
 
 ## Monorepo Structure
 
@@ -26,17 +26,18 @@ A SaaS platform for managing entries and exits in gated communities and real est
 │   └── ui/           # Shared UI leftovers from the starter
 ├── supabase/
 │   ├── migrations/   # Schema + RLS
-│   ├── seed.sql      # Local Auth users and sample data
+│   ├── seed.sql      # Demo Auth users and sample data
 │   └── tests/        # pgTAP RLS tests
 └── docs/
 ```
 
-## Local development
+## Hosted Supabase
+
+Create a project in the dashboard, then `pnpm db:login`, `pnpm db:link`, `pnpm db:push`, `pnpm db:seed`. Point `apps/web/.env.local` and `apps/api/.env` at that project. `pnpm dev` does not need Docker.
+
+## Local CLI stack (optional)
 
 ```sh
-pnpm install
-cp apps/web/.env.example apps/web/.env.local
-cp apps/api/.env.example apps/api/.env
 pnpm db:start          # Postgres, Auth, Studio (http://127.0.0.1:54323)
 pnpm dev               # web :3000, api :4000, docs :3001
 ```

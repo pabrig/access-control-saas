@@ -1,231 +1,198 @@
--- Local development seed. Passwords are for local Auth only (never production).
--- Login: <email> / password123
+-- Demo data for development. Passwords are password123 (never use in production).
+-- Single DO block so `supabase db query --linked -f` executes the whole file.
 
-create or replace function public._seed_auth_user(
-  p_id uuid,
-  p_email text,
-  p_password text,
-  p_first_name text,
-  p_last_name text
-)
-returns void
-language plpgsql
-security definer
-set search_path = auth, extensions, public
-as $$
+do $$
 begin
   insert into auth.users (
-    instance_id,
-    id,
-    aud,
-    role,
-    email,
-    encrypted_password,
-    email_confirmed_at,
-    raw_app_meta_data,
-    raw_user_meta_data,
-    created_at,
-    updated_at,
-    confirmation_token,
-    email_change,
-    email_change_token_new,
-    recovery_token
-  )
+      instance_id, id, aud, role, email, encrypted_password,
+      email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+      created_at, updated_at, confirmation_token, email_change,
+      email_change_token_new, recovery_token
+    )
+    values
+      (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000001',
+        'authenticated', 'authenticated', 'superadmin@example.com',
+        crypt('password123', gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"first_name":"Super","last_name":"Admin"}'::jsonb,
+        now(), now(), '', '', '', ''
+      ),
+      (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000002',
+        'authenticated', 'authenticated', 'complex.admin@example.com',
+        crypt('password123', gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"first_name":"Carla","last_name":"Complejo"}'::jsonb,
+        now(), now(), '', '', '', ''
+      ),
+      (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000003',
+        'authenticated', 'authenticated', 'neighborhood.admin@example.com',
+        crypt('password123', gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"first_name":"Nico","last_name":"Barrio"}'::jsonb,
+        now(), now(), '', '', '', ''
+      ),
+      (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000004',
+        'authenticated', 'authenticated', 'owner@example.com',
+        crypt('password123', gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"first_name":"Olivia","last_name":"Lote1"}'::jsonb,
+        now(), now(), '', '', '', ''
+      ),
+      (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000005',
+        'authenticated', 'authenticated', 'owner2@example.com',
+        crypt('password123', gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"first_name":"Omar","last_name":"Lote2"}'::jsonb,
+        now(), now(), '', '', '', ''
+      ),
+      (
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000006',
+        'authenticated', 'authenticated', 'security@example.com',
+        crypt('password123', gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{"first_name":"Sofia","last_name":"Guardia"}'::jsonb,
+        now(), now(), '', '', '', ''
+      )
+    on conflict (id) do nothing;
+
+    insert into auth.identities (
+      id, user_id, identity_data, provider, provider_id,
+      last_sign_in_at, created_at, updated_at
+    )
+    select * from (
+      values
+        (
+          gen_random_uuid(), '00000000-0000-0000-0000-000000000001'::uuid,
+          '{"sub":"00000000-0000-0000-0000-000000000001","email":"superadmin@example.com"}'::jsonb,
+          'email', '00000000-0000-0000-0000-000000000001', now(), now(), now()
+        ),
+        (
+          gen_random_uuid(), '00000000-0000-0000-0000-000000000002'::uuid,
+          '{"sub":"00000000-0000-0000-0000-000000000002","email":"complex.admin@example.com"}'::jsonb,
+          'email', '00000000-0000-0000-0000-000000000002', now(), now(), now()
+        ),
+        (
+          gen_random_uuid(), '00000000-0000-0000-0000-000000000003'::uuid,
+          '{"sub":"00000000-0000-0000-0000-000000000003","email":"neighborhood.admin@example.com"}'::jsonb,
+          'email', '00000000-0000-0000-0000-000000000003', now(), now(), now()
+        ),
+        (
+          gen_random_uuid(), '00000000-0000-0000-0000-000000000004'::uuid,
+          '{"sub":"00000000-0000-0000-0000-000000000004","email":"owner@example.com"}'::jsonb,
+          'email', '00000000-0000-0000-0000-000000000004', now(), now(), now()
+        ),
+        (
+          gen_random_uuid(), '00000000-0000-0000-0000-000000000005'::uuid,
+          '{"sub":"00000000-0000-0000-0000-000000000005","email":"owner2@example.com"}'::jsonb,
+          'email', '00000000-0000-0000-0000-000000000005', now(), now(), now()
+        ),
+        (
+          gen_random_uuid(), '00000000-0000-0000-0000-000000000006'::uuid,
+          '{"sub":"00000000-0000-0000-0000-000000000006","email":"security@example.com"}'::jsonb,
+          'email', '00000000-0000-0000-0000-000000000006', now(), now(), now()
+        )
+    ) as v(id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+    where not exists (
+      select 1 from auth.identities i
+      where i.user_id = v.user_id and i.provider = 'email'
+    );
+
+  insert into public.complexes (id, name)
+  values ('10000000-0000-0000-0000-000000000001', 'Master Plan Norte')
+  on conflict (id) do nothing;
+
+  insert into public.neighborhoods (id, complex_id, name)
+  values
+    ('10000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000001', 'Barrio Los Robles'),
+    ('10000000-0000-0000-0000-000000000012', null, 'Barrio Independiente')
+  on conflict (id) do nothing;
+
+  insert into public.properties (id, neighborhood_id, lot_number, street_name)
+  values
+    ('10000000-0000-0000-0000-000000000021', '10000000-0000-0000-0000-000000000011', '1', 'Calle Robles'),
+    ('10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000011', '2', 'Calle Robles')
+  on conflict (id) do nothing;
+
+  insert into public.gates (id, complex_id, neighborhood_id, name, type)
+  values
+    (
+      '10000000-0000-0000-0000-000000000031',
+      '10000000-0000-0000-0000-000000000001',
+      null,
+      'Barrera principal',
+      'MAIN_COMPLEX'
+    ),
+    (
+      '10000000-0000-0000-0000-000000000032',
+      null,
+      '10000000-0000-0000-0000-000000000011',
+      'Barrera interna Los Robles',
+      'INTERNAL_NEIGHBORHOOD'
+    )
+  on conflict (id) do nothing;
+
+  insert into public.user_roles (user_id, role, complex_id, neighborhood_id, property_id)
+  select * from (
+    values
+      ('00000000-0000-0000-0000-000000000001'::uuid, 'SUPERADMIN'::public.role, null::uuid, null::uuid, null::uuid),
+      ('00000000-0000-0000-0000-000000000002'::uuid, 'COMPLEX_ADMIN'::public.role, '10000000-0000-0000-0000-000000000001'::uuid, null::uuid, null::uuid),
+      ('00000000-0000-0000-0000-000000000003'::uuid, 'NEIGHBORHOOD_ADMIN'::public.role, null::uuid, '10000000-0000-0000-0000-000000000011'::uuid, null::uuid),
+      ('00000000-0000-0000-0000-000000000004'::uuid, 'OWNER'::public.role, null::uuid, null::uuid, '10000000-0000-0000-0000-000000000021'::uuid),
+      ('00000000-0000-0000-0000-000000000005'::uuid, 'OWNER'::public.role, null::uuid, null::uuid, '10000000-0000-0000-0000-000000000022'::uuid),
+      ('00000000-0000-0000-0000-000000000006'::uuid, 'SECURITY'::public.role, null::uuid, null::uuid, null::uuid)
+  ) as v(user_id, role, complex_id, neighborhood_id, property_id)
+  where not exists (
+    select 1 from public.user_roles ur
+    where ur.user_id = v.user_id and ur.role = v.role
+  );
+
+  insert into public.shifts (id, user_id, gate_id)
   values (
-    '00000000-0000-0000-0000-000000000000',
-    p_id,
-    'authenticated',
-    'authenticated',
-    p_email,
-    crypt(p_password, gen_salt('bf')),
-    now(),
-    jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
-    jsonb_build_object('first_name', p_first_name, 'last_name', p_last_name),
-    now(),
-    now(),
-    '',
-    '',
-    '',
-    ''
-  );
-
-  insert into auth.identities (
-    id,
-    user_id,
-    identity_data,
-    provider,
-    provider_id,
-    last_sign_in_at,
-    created_at,
-    updated_at
+    '10000000-0000-0000-0000-000000000051',
+    '00000000-0000-0000-0000-000000000006',
+    '10000000-0000-0000-0000-000000000031'
   )
-  values (
-    gen_random_uuid(),
-    p_id,
-    jsonb_build_object('sub', p_id::text, 'email', p_email),
-    'email',
-    p_id::text,
-    now(),
-    now(),
-    now()
-  );
-end;
-$$;
+  on conflict (id) do nothing;
 
-select public._seed_auth_user(
-  '00000000-0000-0000-0000-000000000001',
-  'superadmin@example.com',
-  'password123',
-  'Super',
-  'Admin'
-);
-
-select public._seed_auth_user(
-  '00000000-0000-0000-0000-000000000002',
-  'complex.admin@example.com',
-  'password123',
-  'Carla',
-  'Complejo'
-);
-
-select public._seed_auth_user(
-  '00000000-0000-0000-0000-000000000003',
-  'neighborhood.admin@example.com',
-  'password123',
-  'Nico',
-  'Barrio'
-);
-
-select public._seed_auth_user(
-  '00000000-0000-0000-0000-000000000004',
-  'owner@example.com',
-  'password123',
-  'Olivia',
-  'Lote1'
-);
-
-select public._seed_auth_user(
-  '00000000-0000-0000-0000-000000000005',
-  'owner2@example.com',
-  'password123',
-  'Omar',
-  'Lote2'
-);
-
-select public._seed_auth_user(
-  '00000000-0000-0000-0000-000000000006',
-  'security@example.com',
-  'password123',
-  'Sofia',
-  'Guardia'
-);
-
-drop function public._seed_auth_user(uuid, text, text, text, text);
-
-insert into public.complexes (id, name)
-values ('10000000-0000-0000-0000-000000000001', 'Master Plan Norte');
-
-insert into public.neighborhoods (id, complex_id, name)
-values
-  ('10000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000001', 'Barrio Los Robles'),
-  ('10000000-0000-0000-0000-000000000012', null, 'Barrio Independiente');
-
-insert into public.properties (id, neighborhood_id, lot_number, street_name)
-values
-  ('10000000-0000-0000-0000-000000000021', '10000000-0000-0000-0000-000000000011', '1', 'Calle Robles'),
-  ('10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000011', '2', 'Calle Robles');
-
-insert into public.gates (id, complex_id, neighborhood_id, name, type)
-values
-  (
-    '10000000-0000-0000-0000-000000000031',
-    '10000000-0000-0000-0000-000000000001',
-    null,
-    'Barrera principal',
-    'MAIN_COMPLEX'
-  ),
-  (
-    '10000000-0000-0000-0000-000000000032',
-    null,
-    '10000000-0000-0000-0000-000000000011',
-    'Barrera interna Los Robles',
-    'INTERNAL_NEIGHBORHOOD'
-  );
-
-insert into public.user_roles (user_id, role, complex_id, neighborhood_id, property_id)
-values
-  ('00000000-0000-0000-0000-000000000001', 'SUPERADMIN', null, null, null),
-  (
-    '00000000-0000-0000-0000-000000000002',
-    'COMPLEX_ADMIN',
-    '10000000-0000-0000-0000-000000000001',
-    null,
-    null
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'NEIGHBORHOOD_ADMIN',
-    null,
-    '10000000-0000-0000-0000-000000000011',
-    null
-  ),
-  (
-    '00000000-0000-0000-0000-000000000004',
-    'OWNER',
-    null,
-    null,
-    '10000000-0000-0000-0000-000000000021'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000005',
-    'OWNER',
-    null,
-    null,
-    '10000000-0000-0000-0000-000000000022'
-  ),
-  ('00000000-0000-0000-0000-000000000006', 'SECURITY', null, null, null);
-
-insert into public.shifts (id, user_id, gate_id)
-values (
-  '10000000-0000-0000-0000-000000000051',
-  '00000000-0000-0000-0000-000000000006',
-  '10000000-0000-0000-0000-000000000031'
-);
-
-insert into public.invitations (
-  id,
-  neighborhood_id,
-  property_id,
-  created_by_user_id,
-  guest_name,
-  guest_dni,
-  qr_token,
-  valid_from,
-  valid_to,
-  is_single_use
-)
-values
-  (
-    '10000000-0000-0000-0000-000000000041',
-    '10000000-0000-0000-0000-000000000011',
-    '10000000-0000-0000-0000-000000000021',
-    '00000000-0000-0000-0000-000000000004',
-    'Invitado Lote 1',
-    '30111222',
-    '20000000-0000-0000-0000-000000000041',
-    now() - interval '1 day',
-    now() + interval '30 days',
-    false
-  ),
-  (
-    '10000000-0000-0000-0000-000000000042',
-    '10000000-0000-0000-0000-000000000011',
-    '10000000-0000-0000-0000-000000000022',
-    '00000000-0000-0000-0000-000000000005',
-    'Invitado Lote 2',
-    '30999888',
-    '20000000-0000-0000-0000-000000000042',
-    now() - interval '1 day',
-    now() + interval '30 days',
-    false
-  );
+  insert into public.invitations (
+    id, neighborhood_id, property_id, created_by_user_id,
+    guest_name, guest_dni, qr_token, valid_from, valid_to, is_single_use
+  )
+  values
+    (
+      '10000000-0000-0000-0000-000000000041',
+      '10000000-0000-0000-0000-000000000011',
+      '10000000-0000-0000-0000-000000000021',
+      '00000000-0000-0000-0000-000000000004',
+      'Invitado Lote 1',
+      '30111222',
+      '20000000-0000-0000-0000-000000000041',
+      now() - interval '1 day',
+      now() + interval '30 days',
+      false
+    ),
+    (
+      '10000000-0000-0000-0000-000000000042',
+      '10000000-0000-0000-0000-000000000011',
+      '10000000-0000-0000-0000-000000000022',
+      '00000000-0000-0000-0000-000000000005',
+      'Invitado Lote 2',
+      '30999888',
+      '20000000-0000-0000-0000-000000000042',
+      now() - interval '1 day',
+      now() + interval '30 days',
+      false
+    )
+  on conflict (id) do nothing;
+end $$;

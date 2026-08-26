@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "dev": "env -u DYLD_INSERT_LIBRARIES tsx watch src/index.ts",
+    "start": "env -u DYLD_INSERT_LIBRARIES tsx src/index.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
