@@ -4,14 +4,17 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "env -u DYLD_INSERT_LIBRARIES next dev --port 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "env -u DYLD_INSERT_LIBRARIES next start",
     "lint": "eslint --max-warnings 0",
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@repo/db": "workspace:*",
     "@repo/ui": "workspace:*",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.4",
     "next": "16.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

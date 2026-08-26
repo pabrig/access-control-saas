@@ -1,0 +1,86 @@
+.main {
+  min-height: 100svh;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+  display: grid;
+  gap: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.kicker {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.meta,
+.error,
+.empty {
+  opacity: 0.75;
+  margin-top: 8px;
+}
+
+.error {
+  color: #b42318;
+}
+
+.header button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.list {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.item p {
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.aside {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.active,
+.revoked {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.active {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.revoked {
+  background: #fef3f2;
+  color: #b42318;
+}
