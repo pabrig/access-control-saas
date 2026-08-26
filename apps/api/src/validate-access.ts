@@ -36,7 +36,11 @@ export async function validateAccess(
 ): Promise<ValidateResult> {
   const parsed = bodySchema.safeParse(rawBody);
   if (!parsed.success) {
-    return { ok: false, code: "INVALID_BODY", message: "qrToken and gateId must be UUIDs" };
+    return {
+      ok: false,
+      code: "INVALID_BODY",
+      message: "qrToken and gateId must be UUIDs",
+    };
   }
 
   const { qrToken, gateId } = parsed.data;
@@ -68,7 +72,11 @@ export async function validateAccess(
   const isSecurity = roles?.some((row) => row.role === "SECURITY") ?? false;
 
   if (!isSuperadmin && !isSecurity) {
-    return { ok: false, code: "NO_SHIFT", message: "Only SECURITY can validate access" };
+    return {
+      ok: false,
+      code: "NO_SHIFT",
+      message: "Only SECURITY can validate access",
+    };
   }
 
   if (!isSuperadmin) {
@@ -179,19 +187,25 @@ export async function validateAccess(
   const validTo = new Date(invitation.valid_to).getTime();
 
   if (now < validFrom) {
-    return { ok: false, code: "NOT_YET_VALID", message: "Invitation is not valid yet" };
+    return {
+      ok: false,
+      code: "NOT_YET_VALID",
+      message: "Invitation is not valid yet",
+    };
   }
 
   if (now > validTo && actionType !== "EXITED") {
     return { ok: false, code: "EXPIRED", message: "Invitation has expired" };
   }
 
-  const { error: insertError } = await serviceClient.from("access_logs").insert({
-    invitation_id: invitation.id,
-    gate_id: gateId,
-    security_user_id: userId,
-    action_type: actionType,
-  });
+  const { error: insertError } = await serviceClient
+    .from("access_logs")
+    .insert({
+      invitation_id: invitation.id,
+      gate_id: gateId,
+      security_user_id: userId,
+      action_type: actionType,
+    });
 
   if (insertError) {
     throw insertError;

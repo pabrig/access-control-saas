@@ -9,7 +9,9 @@ export default async function InvitationsPage() {
   } = await supabase.auth.getUser();
 
   const [{ data: roles }, { data: invitations, error }] = await Promise.all([
-    supabase.from("user_roles").select("role, complex_id, neighborhood_id, property_id"),
+    supabase
+      .from("user_roles")
+      .select("role, complex_id, neighborhood_id, property_id"),
     supabase
       .from("invitations")
       .select(
@@ -25,7 +27,8 @@ export default async function InvitationsPage() {
           <p className={styles.kicker}>Invitaciones visibles para tu scope</p>
           <h1>Invitaciones</h1>
           <p className={styles.meta}>
-            {user?.email} · {(roles ?? []).map((role) => role.role).join(", ") || "sin rol"}
+            {user?.email} ·{" "}
+            {(roles ?? []).map((role) => role.role).join(", ") || "sin rol"}
           </p>
         </div>
         <form action={signOut}>
@@ -52,7 +55,11 @@ export default async function InvitationsPage() {
                   </p>
                 </div>
                 <div className={styles.aside}>
-                  <span className={invitation.is_revoked ? styles.revoked : styles.active}>
+                  <span
+                    className={
+                      invitation.is_revoked ? styles.revoked : styles.active
+                    }
+                  >
                     {invitation.is_revoked ? "Revocada" : "Activa"}
                   </span>
                   <code>{invitation.qr_token.slice(0, 8)}</code>
