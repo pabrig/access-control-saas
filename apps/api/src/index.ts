@@ -52,7 +52,7 @@ app.post("/access/validate", async (req, res) => {
 
     if (!result.ok) {
       const status =
-        result.code === "INVALID_BODY"
+        result.code === "INVALID_BODY" || result.code === "INVALID_PLATE"
           ? 400
           : result.code === "NO_SHIFT"
             ? 403

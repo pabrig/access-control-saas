@@ -23,6 +23,14 @@ If the complex has a main barrier and internal neighborhood barriers, the invita
     - Action: Create `AccessLog` (IN_PROPERTY).
     - Mutation: If the invitation is `SINGLE_USE`, mark as invalid.
 
-## 3. Special Invitation Types
+## 3. Vehicles and passengers
+
+Guests usually arrive by car. An invitation can list **one or more vehicles**, each with **one or more passengers**.
+
+- **Plates:** only the two Argentine formats — old `ABC 123` (`AR_OLD`) and Mercosur `AB 123 CD` (`AR_MERCOSUR`). Stored normalized (`ABC123` / `AB123CD`) plus a display form.
+- **Owner:** loads cars and passengers when creating the pass.
+- **Security:** `POST /access/validate` returns the cars and passengers with the scan result. Optional `plate` in the body: if present and the pass has cars, it must match one of them (`UNKNOWN_PLATE` otherwise). The matching `vehicle_id` is stored on `access_logs`.
+
+## 4. Special Invitation Types
 
 - **PROVIDER:** Invitations can have additional restrictions based on weekdays (`allowed_days`). The backend must validate the current day against this array before authorizing access.

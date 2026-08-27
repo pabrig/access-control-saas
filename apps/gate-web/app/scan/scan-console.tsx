@@ -7,11 +7,24 @@ import styles from "./scan.module.css";
 
 type Gate = { id: string; name: string };
 
+type InvitationVehicle = {
+  plateDisplay: string;
+  plateFormat: string;
+  color: string | null;
+  passengers: Array<{
+    fullName: string;
+    dni: string | null;
+    isDriver: boolean;
+  }>;
+};
+
 type ValidateResult =
   | {
       ok: true;
       actionType: string;
       invitation: { guestName: string };
+      vehicles: InvitationVehicle[];
+      matchedPlate: string | null;
     }
   | { ok: false; code: string; message: string };
 
@@ -119,6 +132,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
       return;
     }
 
+    const plate = new FormData(event.currentTarget).get("plate");
     const qrToken = inputRef.current?.value.trim() ?? "";
     if (!qrToken) {
       return;
@@ -148,7 +162,12 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
         "content-type": "application/json",
         authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ qrToken, gateId: gate.id }),
+      body: JSON.stringify({
+        qrToken,
+        gateId: gate.id,
+        plate:
+          typeof plate === "string" && plate.trim() ? plate.trim() : undefined,
+      }),
     });
 
     const payload = (await response.json()) as ValidateResult;
@@ -189,17 +208,55 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
             placeholder="El lector escribe el UUID y Enter"
           />
         </label>
+        <label>
+          Patente (opcional)
+          <input
+            name="plate"
+            inputMode="text"
+            autoComplete="off"
+            disabled={!gate || busy}
+            placeholder="ABC 123 o AB 123 CD"
+          />
+        </label>
         <button type="submit" disabled={!gate || busy}>
           Validar
         </button>
       </form>
 
       {result ? (
-        <p className={result.ok ? styles.ok : styles.fail}>
-          {result.ok
-            ? `${accessActionLabel(result.actionType)} · ${result.invitation.guestName}`
-            : `${result.code}: ${result.message}`}
-        </p>
+        <div className={result.ok ? styles.ok : styles.fail}>
+          <p>
+            {result.ok
+              ? `${accessActionLabel(result.actionType)} · ${result.invitation.guestName}`
+              : `${result.code}: ${result.message}`}
+          </p>
+          {result.ok && result.matchedPlate ? (
+            <p className={styles.partyMeta}>
+              Patente leída: {result.matchedPlate}
+            </p>
+          ) : null}
+          {result.ok && result.vehicles.length > 0 ? (
+            <ul className={styles.party}>
+              {result.vehicles.map((vehicle) => (
+                <li key={vehicle.plateDisplay}>
+                  <strong>
+                    {vehicle.plateDisplay}
+                    {vehicle.color ? ` · ${vehicle.color}` : ""}
+                  </strong>
+                  <span>
+                    {vehicle.passengers
+                      .map((passenger) =>
+                        passenger.isDriver
+                          ? `${passenger.fullName} (conductor)`
+                          : passenger.fullName,
+                      )
+                      .join(" · ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
 
       <section className={styles.audit}>

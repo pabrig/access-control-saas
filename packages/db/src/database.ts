@@ -17,6 +17,7 @@ export type Database = {
           invitation_id: string | null;
           security_user_id: string;
           timestamp: string;
+          vehicle_id: string | null;
         };
         Insert: {
           action_type: Database["public"]["Enums"]["access_status"];
@@ -25,6 +26,7 @@ export type Database = {
           invitation_id?: string | null;
           security_user_id: string;
           timestamp?: string;
+          vehicle_id?: string | null;
         };
         Update: {
           action_type?: Database["public"]["Enums"]["access_status"];
@@ -33,6 +35,7 @@ export type Database = {
           invitation_id?: string | null;
           security_user_id?: string;
           timestamp?: string;
+          vehicle_id?: string | null;
         };
         Relationships: [
           {
@@ -54,6 +57,13 @@ export type Database = {
             columns: ["security_user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "access_logs_vehicle_id_fkey";
+            columns: ["vehicle_id"];
+            isOneToOne: false;
+            referencedRelation: "invitation_vehicles";
             referencedColumns: ["id"];
           },
         ];
@@ -111,6 +121,89 @@ export type Database = {
             columns: ["neighborhood_id"];
             isOneToOne: false;
             referencedRelation: "neighborhoods";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invitation_passengers: {
+        Row: {
+          created_at: string;
+          dni: string | null;
+          full_name: string;
+          id: string;
+          invitation_id: string;
+          is_driver: boolean;
+          vehicle_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          dni?: string | null;
+          full_name: string;
+          id?: string;
+          invitation_id: string;
+          is_driver?: boolean;
+          vehicle_id: string;
+        };
+        Update: {
+          created_at?: string;
+          dni?: string | null;
+          full_name?: string;
+          id?: string;
+          invitation_id?: string;
+          is_driver?: boolean;
+          vehicle_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invitation_passengers_invitation_id_fkey";
+            columns: ["invitation_id"];
+            isOneToOne: false;
+            referencedRelation: "invitations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitation_passengers_vehicle_id_fkey";
+            columns: ["vehicle_id"];
+            isOneToOne: false;
+            referencedRelation: "invitation_vehicles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invitation_vehicles: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          id: string;
+          invitation_id: string;
+          plate_display: string;
+          plate_format: Database["public"]["Enums"]["plate_format"];
+          plate_normalized: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          invitation_id: string;
+          plate_display: string;
+          plate_format: Database["public"]["Enums"]["plate_format"];
+          plate_normalized: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          invitation_id?: string;
+          plate_display?: string;
+          plate_format?: Database["public"]["Enums"]["plate_format"];
+          plate_normalized?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invitation_vehicles_invitation_id_fkey";
+            columns: ["invitation_id"];
+            isOneToOne: false;
+            referencedRelation: "invitations";
             referencedColumns: ["id"];
           },
         ];
@@ -386,6 +479,7 @@ export type Database = {
         | "EXITED"
         | "EXPIRED";
       gate_type: "MAIN_COMPLEX" | "INTERNAL_NEIGHBORHOOD";
+      plate_format: "AR_OLD" | "AR_MERCOSUR";
       role:
         | "SUPERADMIN"
         | "COMPLEX_ADMIN"
@@ -530,6 +624,7 @@ export const Constants = {
         "EXPIRED",
       ],
       gate_type: ["MAIN_COMPLEX", "INTERNAL_NEIGHBORHOOD"],
+      plate_format: ["AR_OLD", "AR_MERCOSUR"],
       role: [
         "SUPERADMIN",
         "COMPLEX_ADMIN",

@@ -12,6 +12,7 @@ import { accessActionLabel, passStatus } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
 import { createClient } from "@/lib/supabase/server";
 import { createInvitation, revokeInvitation } from "./actions";
+import { VehicleFields } from "./vehicle-fields";
 import styles from "./pases.module.css";
 
 export default async function PasesPage({
@@ -27,7 +28,7 @@ export default async function PasesPage({
       supabase
         .from("invitations")
         .select(
-          "id, guest_name, guest_dni, valid_from, valid_to, is_revoked, is_single_use, qr_token, properties(lot_number, street_name)",
+          "id, guest_name, guest_dni, valid_from, valid_to, is_revoked, is_single_use, qr_token, properties(lot_number, street_name), invitation_vehicles(id, plate_display, plate_format, color, invitation_passengers(full_name, dni, is_driver))",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -90,7 +91,7 @@ export default async function PasesPage({
       <PageHeader
         kicker="Visitas"
         title="Pases"
-        description="Un pase es el QR que mostrás en la barrera. Podés limitarlo a un horario o a un solo uso."
+        description="Un pase es el QR que mostrás en la barrera. Si vienen en auto, cargá patente y quién viaja."
       />
 
       {formError ? <Banner tone="danger">{formError}</Banner> : null}
@@ -157,6 +158,7 @@ export default async function PasesPage({
               <input type="checkbox" name="is_single_use" />
               Un solo uso (se apaga al entrar al lote)
             </label>
+            <VehicleFields />
             <button className={ui.button} type="submit">
               Crear QR
             </button>
@@ -202,6 +204,30 @@ export default async function PasesPage({
                     {formatDateTime(invitation.valid_from)} →{" "}
                     {formatDateTime(invitation.valid_to)}
                   </p>
+                  {(invitation.invitation_vehicles ?? []).length > 0 ? (
+                    <section>
+                      <h3>Autos</h3>
+                      <ul className={styles.vehicles}>
+                        {(invitation.invitation_vehicles ?? []).map(
+                          (vehicle) => (
+                            <li key={vehicle.id}>
+                              <strong>{vehicle.plate_display}</strong>
+                              {vehicle.color ? ` · ${vehicle.color}` : ""}
+                              <span>
+                                {(vehicle.invitation_passengers ?? [])
+                                  .map((passenger) =>
+                                    passenger.is_driver
+                                      ? `${passenger.full_name} (conductor)`
+                                      : passenger.full_name,
+                                  )
+                                  .join(" · ")}
+                              </span>
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    </section>
+                  ) : null}
                   {status === "active" || status === "scheduled" ? (
                     <form action={revokeInvitation}>
                       <input type="hidden" name="id" value={invitation.id} />
