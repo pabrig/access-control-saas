@@ -24,6 +24,7 @@ jobs:
       TURBO_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321' }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-anon-key' }}
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
     steps:
       - uses: actions/checkout@v7
 
@@ -42,6 +43,9 @@ jobs:
 
       - name: Types
         run: pnpm check-types
+
+      - name: Test
+        run: pnpm test
 
       - name: Build
         run: pnpm build

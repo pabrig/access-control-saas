@@ -13,6 +13,7 @@ The QR validation path is the exception: `apps/api` uses the service role inside
 
 ## Frontend - Backend Communication
 
-- **admin-web (`apps/web`):** Next.js talks to Supabase directly (`@supabase/ssr`). RLS is the authorization layer.
-- **API (`apps/api`):** `POST /access/validate` with the guard JWT. Service role writes `access_logs`. Intended for `gate-web` with &lt;200ms local scans; the QR reader simulates keyboard input plus Enter.
-- **Studio:** local Supabase Studio for inspecting tables and policies.
+- **admin-web (`apps/web`):** Next.js talks to Supabase directly (`@supabase/ssr`). RLS is the authorization layer. Owners create and revoke invitations here and read the movement ledger per guest.
+- **gate-web (`apps/gate-web`):** PWA for SECURITY. Keyboard-wedge scan plus Enter; browser POSTs to the API with the guard JWT. The shift log is a read of `access_logs`.
+- **API (`apps/api`):** `POST /access/validate` with the guard JWT. Service role writes `access_logs`. Target: local scans &lt;200ms.
+- **Studio:** hosted Supabase dashboard (optional local Studio) for inspecting tables and policies.

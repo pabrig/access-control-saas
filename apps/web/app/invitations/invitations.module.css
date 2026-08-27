@@ -32,6 +32,68 @@
   color: #b42318;
 }
 
+.success {
+  color: #027a48;
+  background: #ecfdf3;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.create {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.create h2 {
+  font-size: 16px;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.form label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.form input,
+.form select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.form button,
+.aside button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--foreground);
+  color: var(--background);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aside button {
+  background: transparent;
+  color: #b42318;
+  border: 1px solid #b42318;
+  font-weight: 500;
+}
+
 .header button {
   padding: 10px 14px;
   border-radius: 8px;
@@ -48,12 +110,17 @@
 }
 
 .item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
   gap: 16px;
   padding: 16px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.itemTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .item p {
@@ -66,6 +133,13 @@
   justify-items: end;
   gap: 8px;
   font-size: 13px;
+}
+
+.token {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  word-break: break-all;
 }
 
 .active,
@@ -83,4 +157,34 @@
 .revoked {
   background: #fef3f2;
   color: #b42318;
+}
+
+.audit {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.audit h3 {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.audit ol {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.audit li {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.audit li span {
+  opacity: 0.7;
 }

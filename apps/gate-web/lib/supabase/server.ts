@@ -9,7 +9,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookieOptions: { name: "sb-web-auth" },
+      cookieOptions: { name: "sb-gate-auth" },
       cookies: {
         getAll() {
           return cookieStore.getAll();

@@ -11,7 +11,7 @@ Identity is split: `auth.users` (Supabase Auth) and `public.profiles` (`id` refe
 5. **user_roles:** Scoped RBAC assignment (`SUPERADMIN`, `COMPLEX_ADMIN`, `NEIGHBORHOOD_ADMIN`, `SECURITY`, `OWNER`).
 6. **shifts:** Active gate assignment for `SECURITY`.
 7. **invitations:** Guest QR (`qr_token` unique).
-8. **access_logs:** Movement history written by the validation API.
+8. **access_logs:** Movement history written by the validation API. Owners read logs of their invitations (gate + guard). SECURITY reads logs of their scans / active gate. Writes stay on the service role.
 
 Source of truth: [`supabase/migrations`](../supabase/migrations).
 
