@@ -1,22 +1,20 @@
 {
-  "name": "web",
+  "name": "gate-web",
   "version": "0.1.0",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "env -u DYLD_INSERT_LIBRARIES next dev --port 3000",
+    "dev": "env -u DYLD_INSERT_LIBRARIES next dev --port 3002",
     "build": "next build",
-    "start": "env -u DYLD_INSERT_LIBRARIES next start",
+    "start": "env -u DYLD_INSERT_LIBRARIES next start --port 3002",
     "lint": "eslint --max-warnings 0",
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
-    "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "next": "16.2.0",
-    "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -24,7 +22,6 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
-    "@types/qrcode": "^1.5.5",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "eslint": "^9.39.1",

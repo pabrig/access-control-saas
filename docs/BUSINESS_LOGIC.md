@@ -1,0 +1,28 @@
+# Core Business Logic
+
+## 1. Scoped RBAC Rules
+
+- **SUPERADMIN:** Global access to all tables and tenants.
+- **COMPLEX_ADMIN:** Management restricted to `complex_id` and transitively to child `neighborhood_ids`.
+- **NEIGHBORHOOD_ADMIN:** Management restricted exclusively to a `neighborhood_id`.
+- **SECURITY:** Read/Validation access restricted to the `gate_id` assigned to their shift.
+- **OWNER:** Creation/Read permissions for invitations strictly limited to their `property_id`.
+
+## 2. QR Generation and Validation Flow
+
+- **QR Token:** UUID stored on `invitations.qr_token`, unique per invitation.
+- **Scanning (Validation):** `POST /access/validate` on `apps/api` receives `{ qrToken, gateId }` with the guard JWT. Writes use the Supabase service role.
+
+### 2.1. Double Barrier Logic
+
+If the complex has a main barrier and internal neighborhood barriers, the invitation state flow is:
+
+1.  **Arrival at Barrier 1 (MAIN_COMPLEX):**
+    - Action: Create `AccessLog` (IN_COMPLEX). QR remains active.
+2.  **Arrival at Barrier 2 (INTERNAL_NEIGHBORHOOD):**
+    - Action: Create `AccessLog` (IN_PROPERTY).
+    - Mutation: If the invitation is `SINGLE_USE`, mark as invalid.
+
+## 3. Special Invitation Types
+
+- **PROVIDER:** Invitations can have additional restrictions based on weekdays (`allowed_days`). The backend must validate the current day against this array before authorizing access.

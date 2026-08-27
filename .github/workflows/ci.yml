@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  workflow_call:
+    inputs:
+      gate:
+        description: "integration (develop) or production (main)"
+        required: true
+        type: string
+
+concurrency:
+  group: ci-${{ inputs.gate }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality (${{ inputs.gate }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TURBO_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-anon-key' }}
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Types
+        run: pnpm check-types
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Production gate note
+        if: inputs.gate == 'production'
+        run: echo "Production gate is green. Add migration dry-run / smoke here when deploys exist."

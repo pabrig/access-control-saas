@@ -1,0 +1,42 @@
+name: PR conventions
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+    branches: [develop, main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  title:
+    name: Conventional title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BASE: ${{ github.base_ref }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          set -euo pipefail
+          if [ "$DRAFT" = "true" ]; then
+            echo "Draft PR, skipping title check"
+            exit 0
+          fi
+
+          pattern='^(feat|fix|hotfix|docs|refactor|test|chore|ci|revert|release)(\([a-z0-9_-]+\))?: .+'
+          if ! echo "$TITLE" | grep -Eq "$pattern"; then
+            echo "Title must be a Conventional Commit, e.g. feat(web): add invitations list"
+            echo "Got: $TITLE"
+            exit 1
+          fi
+
+          if [ "$BASE" = "main" ] && ! echo "$TITLE" | grep -Eq '^(release|hotfix|fix)(\([a-z0-9_-]+\))?: .+'; then
+            echo "PRs into main must start with release:, hotfix:, or fix:"
+            echo "Got: $TITLE"
+            exit 1
+          fi
+
+          echo "OK: $TITLE → $BASE"

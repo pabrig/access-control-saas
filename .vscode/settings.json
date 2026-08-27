@@ -1,0 +1,8 @@
+{
+  "console-ninja.toolsToEnableSupportAutomaticallyFor": {
+    "next.js": false,
+    "vite": false,
+    "webpack": false,
+    "nest.js": false
+  }
+}
