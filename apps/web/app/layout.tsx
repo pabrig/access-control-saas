@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   description: "Invitá a tu lote y controlá quién entra al barrio",
 };
 
-const themeBoot = `(function(){try{var t=localStorage.getItem("acceso-theme");if(t==="dark"||t==="light"){document.documentElement.setAttribute("data-theme",t);}else if(window.matchMedia("(prefers-color-scheme: dark)").matches){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();`;
+const THEME_BOOT = `(function(){try{var t=localStorage.getItem("acceso-theme");if(t==="dark"||t==="light"){document.documentElement.setAttribute("data-theme",t);}else if(window.matchMedia("(prefers-color-scheme: dark)").matches){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -22,10 +23,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={sans.variable} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
-      </head>
-      <body>{children}</body>
+      <body>
+        <Script id="acceso-theme" strategy="beforeInteractive">
+          {THEME_BOOT}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }

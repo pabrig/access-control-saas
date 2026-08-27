@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { accessActionLabel } from "@/lib/access-labels";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/icons";
+import { accessActionShort, isExitAction } from "@/lib/access-labels";
+import { formatDayHeading, formatTime } from "@/lib/format";
 import { gateErrorLabel, gateRequest } from "@/lib/gate-api";
 import { createClient } from "@/lib/supabase/client";
 import { QrCamera } from "./qr-camera";
@@ -106,19 +108,17 @@ function asNamed(value: unknown) {
 function lotLine(identity: {
   lotNumber: string;
   streetName: string | null;
-  neighborhoodName: string;
 }) {
   const lot = identity.lotNumber ? `Lote ${identity.lotNumber}` : "Lote";
-  const street = identity.streetName ? ` · ${identity.streetName}` : "";
-  return `${identity.neighborhoodName} · ${lot}${street}`;
+  return identity.streetName ? `${identity.streetName} · ${lot}` : lot;
 }
 
 function outcomeCopy(actionType: string) {
   if (actionType === "EXITED") {
-    return { title: "SALIDA", verb: "Registrar salida" };
+    return { title: "Salió", verb: "Salir", out: true };
   }
 
-  return { title: "ENTRADA", verb: "Aprobar ingreso" };
+  return { title: "Entró", verb: "Entrar", out: false };
 }
 
 async function loadMovements() {
@@ -177,13 +177,13 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
       }
 
       if (error || !data) {
-        setReadyError("No hay un turno activo en una barrera.");
+        setReadyError("No hay un turno activo.");
         return;
       }
 
       const nextGate = asGate(data.gates);
       if (!nextGate) {
-        setReadyError("El turno no tiene una barrera asignada.");
+        setReadyError("El turno no tiene una puerta asignada.");
         return;
       }
 
@@ -232,7 +232,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
         setFlash({
           ok: false,
           code: "INVALID_QR",
-          message: "QR inválido o desconocido",
+          message: "QR inválido",
         });
         return;
       }
@@ -365,103 +365,43 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
 
   const locked = !gate || busy;
   const outcome = identity ? outcomeCopy(identity.actionType) : null;
+  const days = useMemo(() => {
+    const groups: Array<{ heading: string; items: Movement[] }> = [];
+    for (const movement of movements) {
+      const heading = formatDayHeading(movement.timestamp);
+      const last = groups.at(-1);
+      if (last?.heading === heading) {
+        last.items.push(movement);
+      } else {
+        groups.push({ heading, items: [movement] });
+      }
+    }
+    return groups;
+  }, [movements]);
 
   return (
     <section className={styles.console}>
-      <div className={styles.statusBar} role="status">
+      <p className={styles.kicker}>
+        {identity?.neighborhoodName ?? gate?.name ?? "Puerta"}
+      </p>
+      <h1>{identity?.guestName ?? "En la puerta"}</h1>
+      <p className={styles.lead}>
+        {identity
+          ? lotLine(identity)
+          : "Escaneá el QR o buscá quién entra."}
+      </p>
+      <p className={styles.status} role="status">
         <span className={gate ? styles.live : styles.offline} />
-        {gate ? gate.name : (readyError ?? "Buscando turno…")}
-      </div>
-
-      {cameraOn && gate ? (
-        <QrCamera
-          active={!busy && !identity}
-          onCode={(code) => void previewQr(code)}
-        />
-      ) : null}
-
-      <form
-        className={styles.search}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void lookup(query);
-        }}
-      >
-        <label htmlFor="gate-search">Buscar patente o DNI</label>
-        <input
-          id="gate-search"
-          ref={searchRef}
-          value={query}
-          onChange={(event) => onSearchChange(event.target.value)}
-          inputMode="search"
-          autoComplete="off"
-          autoCapitalize="characters"
-          disabled={locked}
-          placeholder="ABC 123 · DNI · nombre"
-        />
-      </form>
-
-      {matches.length > 1 ? (
-        <ul className={styles.suggestions}>
-          {matches.map((match) => (
-            <li key={match.qrToken}>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void previewQr(match.qrToken)}
-              >
-                <strong>{match.guestName}</strong>
-                <span>
-                  {match.plateDisplay ? `${match.plateDisplay} · ` : ""}
-                  {match.guestDni ? `DNI ${match.guestDni} · ` : ""}
-                  Lote {match.lotNumber}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      <label className={styles.hiddenScan}>
-        Lector USB
-        <input
-          ref={scannerRef}
-          inputMode="none"
-          autoComplete="off"
-          disabled={locked}
-          placeholder="El lector escribe el UUID"
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              void previewQr(event.currentTarget.value.trim());
-              event.currentTarget.value = "";
-            }
-          }}
-        />
-      </label>
-
-      <div className={styles.toolbar}>
-        <button
-          type="button"
-          className={styles.ghost}
-          onClick={() => setCameraOn((value) => !value)}
-        >
-          {cameraOn ? "Ocultar cámara" : "Mostrar cámara"}
-        </button>
-      </div>
+        {gate ? "Turno activo" : (readyError ?? "Buscando turno…")}
+      </p>
 
       {identity && outcome ? (
         <article className={styles.identity} aria-live="polite">
-          <p className={styles.identityKicker}>Verificar identidad</p>
-          <h2>{identity.guestName}</h2>
-          <p className={styles.identityMeta}>{lotLine(identity)}</p>
           {identity.guestDni ? (
             <p className={styles.identityMeta}>DNI {identity.guestDni}</p>
           ) : null}
           {identity.matchedPlate ? (
-            <p className={styles.identityMeta}>
-              Patente leída: {identity.matchedPlate}
-            </p>
+            <p className={styles.identityMeta}>Patente {identity.matchedPlate}</p>
           ) : null}
           {identity.vehicles.length > 0 ? (
             <ul className={styles.party}>
@@ -485,11 +425,12 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
             </ul>
           ) : null}
           <button
-            className={styles.approve}
+            className={outcome.out ? `${styles.approve} ${styles.out}` : styles.approve}
             type="button"
             disabled={busy}
             onClick={() => void approve()}
           >
+            <Icon name={outcome.out ? "exit" : "enter"} size={18} />
             {outcome.verb}
           </button>
           <button
@@ -505,31 +446,120 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
           </button>
         </article>
       ) : (
-        <p className={styles.idle}>
-          Escaneá el QR o buscá la patente. El ingreso se confirma en un toque.
-        </p>
+        <>
+          {cameraOn && gate ? (
+            <QrCamera
+              active={!busy}
+              onCode={(code) => void previewQr(code)}
+            />
+          ) : null}
+
+          <form
+            className={styles.search}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void lookup(query);
+            }}
+          >
+            <label htmlFor="gate-search">Patente, DNI o nombre</label>
+            <input
+              id="gate-search"
+              ref={searchRef}
+              value={query}
+              onChange={(event) => onSearchChange(event.target.value)}
+              inputMode="search"
+              autoComplete="off"
+              autoCapitalize="characters"
+              disabled={locked}
+              placeholder="ABC 123"
+            />
+          </form>
+
+          {matches.length > 1 ? (
+            <ul className={styles.suggestions}>
+              {matches.map((match) => (
+                <li key={match.qrToken}>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void previewQr(match.qrToken)}
+                  >
+                    <strong>{match.guestName}</strong>
+                    <span>
+                      {match.plateDisplay ? `${match.plateDisplay} · ` : ""}
+                      {match.guestDni ? `DNI ${match.guestDni} · ` : ""}
+                      Lote {match.lotNumber}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <label className={styles.srOnly}>
+            Lector USB
+            <input
+              ref={scannerRef}
+              inputMode="none"
+              autoComplete="off"
+              disabled={locked}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void previewQr(event.currentTarget.value.trim());
+                  event.currentTarget.value = "";
+                }
+              }}
+            />
+          </label>
+
+          <div className={styles.toolbar}>
+            <button
+              type="button"
+              className={styles.ghost}
+              onClick={() => setCameraOn((value) => !value)}
+            >
+              <Icon name="qr" size={18} />
+              {cameraOn ? "Ocultar cámara" : "Cámara"}
+            </button>
+          </div>
+        </>
       )}
 
-      <details className={styles.audit}>
-        <summary>Libro de guardia</summary>
-        {movements.length === 0 ? (
-          <p className={styles.empty}>
-            Todavía no hay movimientos en este turno.
-          </p>
+      {!identity ? (
+        days.length === 0 ? (
+          <p className={styles.quiet}>Cuando escanees un QR, aparece acá.</p>
         ) : (
-          <ol>
-            {movements.map((movement) => (
-              <li key={movement.id}>
-                <strong>{accessActionLabel(movement.actionType)}</strong>
-                <span>
-                  {new Date(movement.timestamp).toLocaleString("es-AR")}
-                  {movement.guestName ? ` · ${movement.guestName}` : ""}
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </details>
+          days.map((day) => (
+            <section key={day.heading}>
+              <h2 className={styles.groupTitle}>{day.heading}</h2>
+              <ul className={styles.feed}>
+                {day.items.map((movement) => {
+                  const exited = isExitAction(movement.actionType);
+                  return (
+                    <li className={styles.feedItem} key={movement.id}>
+                      <span
+                        className={`${styles.feedIcon} ${exited ? styles.feedOut : ""}`}
+                      >
+                        <Icon name={exited ? "exit" : "enter"} size={18} />
+                      </span>
+                      <span className={styles.feedBody}>
+                        <strong>{movement.guestName ?? "Invitado"}</strong>
+                        <span className={styles.feedMeta}>
+                          {accessActionShort(movement.actionType)}
+                        </span>
+                      </span>
+                      <span className={styles.feedTime}>
+                        {formatTime(movement.timestamp)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))
+        )
+      ) : null}
 
       {flash ? (
         <button
@@ -537,10 +567,12 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
           className={flash.ok ? styles.flashOk : styles.flashFail}
           onClick={() => setFlash(null)}
         >
-          <span>{flash.ok ? "APROBADO" : "RECHAZADO"}</span>
+          <span>
+            {flash.ok ? outcomeCopy(flash.actionType).title : "No entra"}
+          </span>
           <strong>
             {flash.ok
-              ? `${outcomeCopy(flash.actionType).title} · ${flash.invitation.guestName}`
+              ? flash.invitation.guestName
               : gateErrorLabel(flash.code, flash.message)}
           </strong>
         </button>
