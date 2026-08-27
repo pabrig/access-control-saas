@@ -22,6 +22,7 @@ pnpm db:seed
 3. Copy **Project URL**, **anon/publishable** and **service_role/secret** from _Project Settings → API_ into:
 
 - `apps/web/.env.local`
+- `apps/gate-web/.env.local`
 - `apps/api/.env`
 
 Templates: `apps/web/.env.example` and `apps/api/.env.example`.
@@ -33,6 +34,7 @@ pnpm dev
 ```
 
 - Admin: http://localhost:3000
+- Gate: http://localhost:3002
 - API: http://127.0.0.1:4000
 - Studio: `https://supabase.com/dashboard/project/YOUR_PROJECT_REF`
 

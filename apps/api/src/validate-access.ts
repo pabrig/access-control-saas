@@ -1,6 +1,11 @@
 import { z } from "zod";
-import { serviceClient } from "./supabase.js";
+import {
+  gateMatchesInvitation,
+  invitationWindowError,
+  shouldRevokeSingleUse,
+} from "./access-rules.js";
 import { nextAccessAction, type AccessStatus } from "./access-state.js";
+import { serviceClient } from "./supabase.js";
 
 const bodySchema = z.object({
   qrToken: z.string().uuid(),
@@ -147,12 +152,15 @@ export async function validateAccess(
 
   const invitationComplexId = neighborhood?.complex_id ?? null;
 
-  const gateMatches =
-    gate.type === "MAIN_COMPLEX"
-      ? gate.complex_id !== null && gate.complex_id === invitationComplexId
-      : gate.neighborhood_id === invitation.neighborhood_id;
-
-  if (!gateMatches) {
+  if (
+    !gateMatchesInvitation({
+      gateType: gate.type,
+      gateComplexId: gate.complex_id,
+      gateNeighborhoodId: gate.neighborhood_id,
+      invitationNeighborhoodId: invitation.neighborhood_id,
+      invitationComplexId,
+    })
+  ) {
     return {
       ok: false,
       code: "WRONG_GATE",
@@ -182,11 +190,14 @@ export async function validateAccess(
     };
   }
 
-  const now = Date.now();
-  const validFrom = new Date(invitation.valid_from).getTime();
-  const validTo = new Date(invitation.valid_to).getTime();
+  const windowError = invitationWindowError(
+    Date.now(),
+    new Date(invitation.valid_from).getTime(),
+    new Date(invitation.valid_to).getTime(),
+    actionType,
+  );
 
-  if (now < validFrom) {
+  if (windowError === "NOT_YET_VALID") {
     return {
       ok: false,
       code: "NOT_YET_VALID",
@@ -194,7 +205,7 @@ export async function validateAccess(
     };
   }
 
-  if (now > validTo && actionType !== "EXITED") {
+  if (windowError === "EXPIRED") {
     return { ok: false, code: "EXPIRED", message: "Invitation has expired" };
   }
 
@@ -211,7 +222,7 @@ export async function validateAccess(
     throw insertError;
   }
 
-  if (invitation.is_single_use && actionType === "IN_PROPERTY") {
+  if (shouldRevokeSingleUse(invitation.is_single_use, actionType)) {
     const { error: revokeError } = await serviceClient
       .from("invitations")
       .update({ is_revoked: true })

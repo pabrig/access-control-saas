@@ -1,12 +1,12 @@
 import cors from "cors";
 import express from "express";
-import { env } from "./env.js";
+import { corsOrigins, env } from "./env.js";
 import { createUserClient } from "./supabase.js";
 import { validateAccess } from "./validate-access.js";
 
 const app = express();
 
-app.use(cors({ origin: env.corsOrigin }));
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 
 app.get("/", (_req, res) => {

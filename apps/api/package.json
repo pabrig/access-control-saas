@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "env -u DYLD_INSERT_LIBRARIES tsx watch src/index.ts",
     "start": "env -u DYLD_INSERT_LIBRARIES tsx src/index.ts",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@repo/db": "workspace:*",
