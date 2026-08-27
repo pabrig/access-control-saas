@@ -45,8 +45,11 @@ export async function claimInvite(formData: FormData) {
   });
 
   if (error) {
-    fail(token, error.message);
+    if (/ya tiene/i.test(error.message)) {
+      redirect(`/i/${token}`);
+    }
+    fail(token, error.message.replace(/\bun pase\b/gi, "un QR"));
   }
 
-  redirect(`/i/${token}?listo=1`);
+  redirect(`/i/${token}`);
 }

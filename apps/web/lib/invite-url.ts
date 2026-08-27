@@ -19,17 +19,17 @@ export function inviteShareUrl(origin: string, shareToken: string) {
 
 export function whatsappShareHref(url: string, ready: boolean) {
   const text = ready
-    ? `Tu pase de acceso: ${url}`
-    : `Te invité al barrio. Completá tus datos y mostrá el QR en la barrera: ${url}`;
+    ? `Tu QR de acceso: ${url}`
+    : `Te invité. Completá tus datos y mostrá el QR en la puerta: ${url}`;
 
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
 export function mailShareHref(url: string, ready: boolean) {
-  const subject = ready ? "Tu pase de acceso" : "Invitación al barrio";
+  const subject = ready ? "Tu QR de acceso" : "Invitación";
   const body = ready
-    ? `Acá está tu pase. Mostralo en la barrera:\n${url}`
-    : `Te invité. Abrí el link, completá tus datos y mostrá el QR en la barrera:\n${url}`;
+    ? `Mostrá este QR en la puerta:\n${url}`
+    : `Abrí el link, completá tus datos y mostrá el QR en la puerta:\n${url}`;
 
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

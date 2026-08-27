@@ -20,10 +20,11 @@ const emptyPassenger = (isDriver: boolean): PassengerDraft => ({
 const emptyVehicle = (): VehicleDraft => ({
   plate: "",
   color: "",
-  passengers: [emptyPassenger(true)],
+  passengers: [],
 });
 
 export function VehicleFields() {
+  const [withCar, setWithCar] = useState(false);
   const [vehicles, setVehicles] = useState<VehicleDraft[]>([emptyVehicle()]);
 
   function updateVehicle(index: number, patch: Partial<VehicleDraft>) {
@@ -63,142 +64,155 @@ export function VehicleFields() {
 
   return (
     <fieldset className={styles.fieldset}>
-      <legend>Autos y pasajeros</legend>
-      <p className={ui.muted}>
-        Si venís en auto, cargá la patente (AAA 000 o AA000AA) y quién viaja.
-      </p>
-      <input type="hidden" name="vehicle_count" value={vehicles.length} />
+      <legend className={styles.legend}>Auto</legend>
+      <label className={ui.check}>
+        <input
+          type="checkbox"
+          checked={withCar}
+          onChange={(event) => setWithCar(event.target.checked)}
+        />
+        Voy en auto
+      </label>
 
-      {vehicles.map((vehicle, vehicleIndex) => (
-        <section className={styles.vehicle} key={vehicleIndex}>
-          <header>
-            <strong>Auto {vehicleIndex + 1}</strong>
-            {vehicles.length > 1 ? (
+      {!withCar ? (
+        <input type="hidden" name="vehicle_count" value={0} />
+      ) : (
+        <>
+          <p className={ui.muted}>Patente y, si viaja alguien más, quién.</p>
+          <input type="hidden" name="vehicle_count" value={vehicles.length} />
+
+          {vehicles.map((vehicle, vehicleIndex) => (
+            <section className={styles.vehicle} key={vehicleIndex}>
+              {vehicles.length > 1 ? (
+                <header>
+                  <strong>Auto {vehicleIndex + 1}</strong>
+                  <button
+                    className={ui.buttonDanger}
+                    type="button"
+                    onClick={() =>
+                      setVehicles((current) =>
+                        current.filter((_, index) => index !== vehicleIndex),
+                      )
+                    }
+                  >
+                    Quitar auto
+                  </button>
+                </header>
+              ) : null}
+              <div className={ui.formRow}>
+                <label>
+                  Patente
+                  <input
+                    name={`vehicle_${vehicleIndex}_plate`}
+                    value={vehicle.plate}
+                    onChange={(event) =>
+                      updateVehicle(vehicleIndex, { plate: event.target.value })
+                    }
+                    placeholder="ABC 123 o AB 123 CD"
+                    maxLength={10}
+                    autoComplete="off"
+                  />
+                </label>
+                <label>
+                  Color
+                  <input
+                    name={`vehicle_${vehicleIndex}_color`}
+                    value={vehicle.color}
+                    onChange={(event) =>
+                      updateVehicle(vehicleIndex, { color: event.target.value })
+                    }
+                    maxLength={32}
+                  />
+                </label>
+              </div>
+              <input
+                type="hidden"
+                name={`vehicle_${vehicleIndex}_passenger_count`}
+                value={vehicle.passengers.length}
+              />
+              {vehicle.passengers.map((passenger, passengerIndex) => (
+                <div className={styles.passenger} key={passengerIndex}>
+                  <label>
+                    Pasajero
+                    <input
+                      name={`vehicle_${vehicleIndex}_passenger_${passengerIndex}_name`}
+                      value={passenger.name}
+                      onChange={(event) =>
+                        updatePassenger(vehicleIndex, passengerIndex, {
+                          name: event.target.value,
+                        })
+                      }
+                      maxLength={120}
+                    />
+                  </label>
+                  <label>
+                    DNI
+                    <input
+                      name={`vehicle_${vehicleIndex}_passenger_${passengerIndex}_dni`}
+                      value={passenger.dni}
+                      onChange={(event) =>
+                        updatePassenger(vehicleIndex, passengerIndex, {
+                          dni: event.target.value,
+                        })
+                      }
+                      maxLength={32}
+                    />
+                  </label>
+                  <label className={ui.check}>
+                    <input
+                      type="checkbox"
+                      name={`vehicle_${vehicleIndex}_passenger_${passengerIndex}_driver`}
+                      checked={passenger.isDriver}
+                      onChange={(event) =>
+                        updatePassenger(vehicleIndex, passengerIndex, {
+                          isDriver: event.target.checked,
+                        })
+                      }
+                    />
+                    Conductor
+                  </label>
+                  <button
+                    className={ui.buttonSecondary}
+                    type="button"
+                    onClick={() =>
+                      updateVehicle(vehicleIndex, {
+                        passengers: vehicle.passengers.filter(
+                          (_, index) => index !== passengerIndex,
+                        ),
+                      })
+                    }
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
               <button
-                className={ui.buttonDanger}
+                className={ui.buttonSecondary}
                 type="button"
                 onClick={() =>
-                  setVehicles((current) =>
-                    current.filter((_, index) => index !== vehicleIndex),
-                  )
+                  updateVehicle(vehicleIndex, {
+                    passengers: [...vehicle.passengers, emptyPassenger(false)],
+                  })
                 }
               >
-                Quitar auto
+                Sumar pasajero
               </button>
-            ) : null}
-          </header>
-          <div className={ui.formRow}>
-            <label>
-              Patente
-              <input
-                name={`vehicle_${vehicleIndex}_plate`}
-                value={vehicle.plate}
-                onChange={(event) =>
-                  updateVehicle(vehicleIndex, { plate: event.target.value })
-                }
-                placeholder="ABC 123 o AB 123 CD"
-                maxLength={10}
-                autoComplete="off"
-              />
-            </label>
-            <label>
-              Color (opcional)
-              <input
-                name={`vehicle_${vehicleIndex}_color`}
-                value={vehicle.color}
-                onChange={(event) =>
-                  updateVehicle(vehicleIndex, { color: event.target.value })
-                }
-                maxLength={32}
-              />
-            </label>
-          </div>
-          <input
-            type="hidden"
-            name={`vehicle_${vehicleIndex}_passenger_count`}
-            value={vehicle.passengers.length}
-          />
-          {vehicle.passengers.map((passenger, passengerIndex) => (
-            <div className={styles.passenger} key={passengerIndex}>
-              <label>
-                Pasajero
-                <input
-                  name={`vehicle_${vehicleIndex}_passenger_${passengerIndex}_name`}
-                  value={passenger.name}
-                  onChange={(event) =>
-                    updatePassenger(vehicleIndex, passengerIndex, {
-                      name: event.target.value,
-                    })
-                  }
-                  maxLength={120}
-                />
-              </label>
-              <label>
-                DNI
-                <input
-                  name={`vehicle_${vehicleIndex}_passenger_${passengerIndex}_dni`}
-                  value={passenger.dni}
-                  onChange={(event) =>
-                    updatePassenger(vehicleIndex, passengerIndex, {
-                      dni: event.target.value,
-                    })
-                  }
-                  maxLength={32}
-                />
-              </label>
-              <label className={ui.check}>
-                <input
-                  type="checkbox"
-                  name={`vehicle_${vehicleIndex}_passenger_${passengerIndex}_driver`}
-                  checked={passenger.isDriver}
-                  onChange={(event) =>
-                    updatePassenger(vehicleIndex, passengerIndex, {
-                      isDriver: event.target.checked,
-                    })
-                  }
-                />
-                Conductor
-              </label>
-              {vehicle.passengers.length > 1 ? (
-                <button
-                  className={ui.buttonSecondary}
-                  type="button"
-                  onClick={() =>
-                    updateVehicle(vehicleIndex, {
-                      passengers: vehicle.passengers.filter(
-                        (_, index) => index !== passengerIndex,
-                      ),
-                    })
-                  }
-                >
-                  Quitar
-                </button>
-              ) : null}
-            </div>
+            </section>
           ))}
-          <button
-            className={ui.buttonSecondary}
-            type="button"
-            onClick={() =>
-              updateVehicle(vehicleIndex, {
-                passengers: [...vehicle.passengers, emptyPassenger(false)],
-              })
-            }
-          >
-            Sumar pasajero
-          </button>
-        </section>
-      ))}
 
-      {vehicles.length < 8 ? (
-        <button
-          className={ui.buttonSecondary}
-          type="button"
-          onClick={() => setVehicles((current) => [...current, emptyVehicle()])}
-        >
-          Sumar otro auto
-        </button>
-      ) : null}
+          {vehicles.length < 8 ? (
+            <button
+              className={ui.buttonSecondary}
+              type="button"
+              onClick={() =>
+                setVehicles((current) => [...current, emptyVehicle()])
+              }
+            >
+              Sumar otro auto
+            </button>
+          ) : null}
+        </>
+      )}
     </fieldset>
   );
 }

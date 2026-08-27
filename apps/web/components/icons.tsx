@@ -19,7 +19,8 @@ type IconName =
   | "logout"
   | "qr"
   | "enter"
-  | "exit";
+  | "exit"
+  | "pin";
 
 export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   return (
@@ -140,6 +141,12 @@ const ICONS: Record<IconName, ReactNode> = {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <path d="m16 17 5-5-5-5" />
       <path d="M21 12H9" />
+    </>
+  ),
+  pin: (
+    <>
+      <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.2" />
     </>
   ),
 };

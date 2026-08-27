@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { Banner } from "@/components/ui";
+import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
-import { formatDateTime, lotLabel } from "@/lib/format";
+import { formatRange, lotLabel } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { VehicleFields } from "@/app/(panel)/pases/vehicle-fields";
 import { CredentialPass } from "../credential-pass";
@@ -45,7 +46,7 @@ export default async function GuestInvitePage({
       ? await QRCode.toDataURL(invite.qr_token, {
           margin: 1,
           width: 280,
-          color: { dark: "#0b1220", light: "#ffffff" },
+          color: { dark: "#1c1915", light: "#ffffff" },
         })
       : null;
 
@@ -54,12 +55,13 @@ export default async function GuestInvitePage({
     lot_number: invite.lot_number,
     street_name: invite.street_name,
   });
+  const validLabel = formatRange(invite.valid_from, invite.valid_to);
 
   if (invite.is_revoked || expired) {
     return (
       <main className={styles.page}>
         <p className={styles.kicker}>{neighborhoodName}</p>
-        <h1>{invite.is_revoked ? "Invitación revocada" : "Pase vencido"}</h1>
+        <h1>{invite.is_revoked ? "Cancelada" : "Venció"}</h1>
         <p className={styles.lead}>{lot}</p>
       </main>
     );
@@ -69,12 +71,12 @@ export default async function GuestInvitePage({
     return (
       <main className={styles.page}>
         <CredentialPass
-          guestName={invite.guest_name ?? "Visita"}
+          guestName={invite.guest_name ?? "Invitado"}
           lotNumber={invite.lot_number}
           neighborhoodName={neighborhoodName}
           qrDataUrl={qrDataUrl}
           streetName={invite.street_name}
-          validLabel={`${formatDateTime(invite.valid_from)} → ${formatDateTime(invite.valid_to)}`}
+          validLabel={validLabel}
         />
       </main>
     );
@@ -83,11 +85,11 @@ export default async function GuestInvitePage({
   return (
     <main className={styles.page}>
       <p className={styles.kicker}>{neighborhoodName}</p>
-      <h1>Completá tus datos</h1>
-      <p className={styles.lead}>
-        {lot}
-        <br />
-        {formatDateTime(invite.valid_from)} → {formatDateTime(invite.valid_to)}
+      <h1>Te invitaron</h1>
+      <p className={styles.lead}>{lot}</p>
+      <p className={styles.when}>
+        <Icon name="clock" size={18} />
+        {validLabel}
       </p>
 
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
@@ -105,12 +107,12 @@ export default async function GuestInvitePage({
             />
           </label>
           <label>
-            DNI (opcional)
+            DNI
             <input name="guest_dni" maxLength={32} inputMode="numeric" />
           </label>
           <VehicleFields />
           <button className={ui.button} type="submit">
-            Generar mi QR
+            Crear QR
           </button>
         </form>
       </section>
