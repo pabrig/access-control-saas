@@ -3,15 +3,17 @@
 ## 1. Scoped RBAC Rules
 
 - **SUPERADMIN:** Global access to all tables and tenants.
-- **COMPLEX_ADMIN:** Management restricted to `complex_id` and transitively to child `neighborhood_ids`.
-- **NEIGHBORHOOD_ADMIN:** Management restricted exclusively to a `neighborhood_id`.
+- **COMPLEX_ADMIN:** Management restricted to `complex_id` and transitively to child `neighborhood_ids`. May create multiple neighborhoods inside that complex.
+- **NEIGHBORHOOD_ADMIN:** Management restricted exclusively to a `neighborhood_id`. Cannot create or delete neighborhoods.
 - **SECURITY:** Read/Validation access restricted to the `gate_id` assigned to their shift.
 - **OWNER:** May update (not create or delete) their own `property`. Full CRUD on invitations strictly limited to their `property_id`. Cannot move the lot to another neighborhood.
 
 ## 2. QR Generation and Validation Flow
 
-- **QR Token:** UUID stored on `invitations.qr_token`, unique per invitation.
-- **Scanning (Validation):** `POST /access/validate` on `apps/api` receives `{ qrToken, gateId }` with the guard JWT. Writes use the Supabase service role.
+- **Owner (mobile):** Creates a `DRAFT` invitation (lot, validity window, optional single-use) and shares `/i/{share_token}` by WhatsApp or email. No barrier QR yet.
+- **Guest:** Opens the public link (no login), fills name / DNI / cars, then `claim_invite` mints `qr_token` and sets `READY`.
+- **Walk-up:** Owner can create a `READY` pass immediately with a guest name if the visitor is already at the gate.
+- **Scanning:** `POST /access/validate` looks up `qr_token`. Drafts are not scannable (`NOT_READY`).
 
 ### 2.1. Double Barrier Logic
 
@@ -28,7 +30,7 @@ If the complex has a main barrier and internal neighborhood barriers, the invita
 Guests usually arrive by car. An invitation can list **one or more vehicles**, each with **one or more passengers**.
 
 - **Plates:** only the two Argentine formats — old `ABC 123` (`AR_OLD`) and Mercosur `AB 123 CD` (`AR_MERCOSUR`). Stored normalized (`ABC123` / `AB123CD`) plus a display form.
-- **Owner:** loads cars and passengers when creating the pass.
+- **Owner:** Sends a share link. The guest loads cars and passengers when they claim the pass. Walk-up passes can skip vehicles.
 - **Security:** `POST /access/validate` returns the cars and passengers with the scan result. Optional `plate` in the body: if present and the pass has cars, it must match one of them (`UNKNOWN_PLATE` otherwise). The matching `vehicle_id` is stored on `access_logs`.
 
 ## 4. Special Invitation Types

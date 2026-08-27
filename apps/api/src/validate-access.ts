@@ -25,7 +25,8 @@ export type ValidateErrorCode =
   | "WRONG_GATE"
   | "INVALID_TRANSITION"
   | "INVALID_PLATE"
-  | "UNKNOWN_PLATE";
+  | "UNKNOWN_PLATE"
+  | "NOT_READY";
 
 export type InvitationVehicle = {
   plateDisplay: string;
@@ -126,7 +127,7 @@ export async function validateAccess(
   const { data: invitation, error: invitationError } = await serviceClient
     .from("invitations")
     .select(
-      "id, guest_name, property_id, neighborhood_id, valid_from, valid_to, is_revoked, is_single_use",
+      "id, guest_name, property_id, neighborhood_id, valid_from, valid_to, is_revoked, is_single_use, status, qr_token",
     )
     .eq("qr_token", qrToken)
     .maybeSingle();
@@ -141,6 +142,14 @@ export async function validateAccess(
 
   if (invitation.is_revoked) {
     return { ok: false, code: "REVOKED", message: "Invitation was revoked" };
+  }
+
+  if (invitation.status !== "READY" || !invitation.qr_token) {
+    return {
+      ok: false,
+      code: "NOT_READY",
+      message: "Guest has not completed this pass yet",
+    };
   }
 
   const { data: vehicleRows, error: vehiclesError } = await serviceClient
@@ -179,7 +188,9 @@ export async function validateAccess(
   }
 
   const matchedPlate =
-    plateDecision === "match" ? (parsePlate(plate)?.display ?? null) : null;
+    plateDecision === "match"
+      ? (parsePlate(plate ?? "")?.display ?? null)
+      : null;
   const matchedVehicleId =
     plateDecision === "match" && plate
       ? ((vehicleRows ?? []).find(
@@ -311,7 +322,7 @@ export async function validateAccess(
     actionType,
     invitation: {
       id: invitation.id,
-      guestName: invitation.guest_name,
+      guestName: invitation.guest_name ?? "Visita",
       propertyId: invitation.property_id,
     },
     vehicles,

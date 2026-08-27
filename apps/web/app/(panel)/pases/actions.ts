@@ -2,36 +2,43 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { parseVehiclesFromForm } from "@/lib/vehicles-form";
 
 function fail(message: string): never {
   redirect(`/pases?error=${encodeURIComponent(message)}`);
 }
 
-export async function createInvitation(formData: FormData) {
+async function loadOwnedProperty(propertyId: string) {
   const supabase = await createClient();
+  const { data: property, error } = await supabase
+    .from("properties")
+    .select("id, neighborhood_id")
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  if (error || !property) {
+    fail("No podés crear un pase para ese lote.");
+  }
+
+  return { supabase, property };
+}
+
+export async function createShareInvite(formData: FormData) {
+  const supabaseAuth = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabaseAuth.auth.getUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  const guestName = String(formData.get("guest_name") ?? "").trim();
-  const guestDni = String(formData.get("guest_dni") ?? "").trim() || null;
   const propertyId = String(formData.get("property_id") ?? "");
   const validFromRaw = String(formData.get("valid_from") ?? "");
   const validToRaw = String(formData.get("valid_to") ?? "");
   const isSingleUse = formData.get("is_single_use") === "on";
-  const vehicles = parseVehiclesFromForm(formData);
 
-  if (typeof vehicles === "string") {
-    fail(vehicles);
-  }
-
-  if (!guestName || !propertyId || !validFromRaw || !validToRaw) {
-    fail("Completá nombre, lote y hasta cuándo vale el pase.");
+  if (!propertyId || !validFromRaw || !validToRaw) {
+    fail("Completá hasta cuándo vale la visita.");
   }
 
   const validFrom = new Date(validFromRaw);
@@ -45,70 +52,75 @@ export async function createInvitation(formData: FormData) {
     fail("La fecha hasta tiene que ser después de la de inicio.");
   }
 
-  const { data: property, error: propertyError } = await supabase
-    .from("properties")
-    .select("id, neighborhood_id")
-    .eq("id", propertyId)
-    .maybeSingle();
+  const { supabase, property } = await loadOwnedProperty(propertyId);
+  const { error } = await supabase.from("invitations").insert({
+    property_id: property.id,
+    neighborhood_id: property.neighborhood_id,
+    created_by_user_id: user.id,
+    valid_from: validFrom.toISOString(),
+    valid_to: validTo.toISOString(),
+    is_single_use: isSingleUse,
+    status: "DRAFT",
+    qr_token: null,
+    guest_name: null,
+  });
 
-  if (propertyError || !property) {
-    fail("No podés crear un pase para ese lote.");
+  if (error) {
+    fail(error.message);
   }
 
-  const { data: invitation, error } = await supabase
-    .from("invitations")
-    .insert({
-      guest_name: guestName,
-      guest_dni: guestDni,
-      property_id: property.id,
-      neighborhood_id: property.neighborhood_id,
-      created_by_user_id: user.id,
-      valid_from: validFrom.toISOString(),
-      valid_to: validTo.toISOString(),
-      is_single_use: isSingleUse,
-    })
-    .select("id")
-    .single();
+  redirect("/pases?created=share");
+}
 
-  if (error || !invitation) {
-    fail(error?.message ?? "No se pudo crear el pase.");
+export async function createDoorInvite(formData: FormData) {
+  const supabaseAuth = await createClient();
+  const {
+    data: { user },
+  } = await supabaseAuth.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
   }
 
-  for (const vehicle of vehicles) {
-    const { data: createdVehicle, error: vehicleError } = await supabase
-      .from("invitation_vehicles")
-      .insert({
-        invitation_id: invitation.id,
-        plate_normalized: vehicle.plateNormalized,
-        plate_display: vehicle.plateDisplay,
-        plate_format: vehicle.plateFormat,
-        color: vehicle.color,
-      })
-      .select("id")
-      .single();
+  const guestName = String(formData.get("guest_name") ?? "").trim();
+  const propertyId = String(formData.get("property_id") ?? "");
+  const validFromRaw = String(formData.get("valid_from") ?? "");
+  const validToRaw = String(formData.get("valid_to") ?? "");
+  const isSingleUse = formData.get("is_single_use") === "on";
 
-    if (vehicleError || !createdVehicle) {
-      fail(vehicleError?.message ?? "No se pudo guardar el auto.");
-    }
-
-    const { error: passengerError } = await supabase
-      .from("invitation_passengers")
-      .insert(
-        vehicle.passengers.map((passenger) => ({
-          invitation_id: invitation.id,
-          vehicle_id: createdVehicle.id,
-          full_name: passenger.fullName,
-          dni: passenger.dni,
-          is_driver: passenger.isDriver,
-        })),
-      );
-
-    if (passengerError) {
-      fail(passengerError.message);
-    }
+  if (!guestName || !propertyId || !validFromRaw || !validToRaw) {
+    fail("Para un pase en puerta hace falta el nombre y hasta cuándo vale.");
   }
 
-  redirect("/pases?created=1");
+  const validFrom = new Date(validFromRaw);
+  const validTo = new Date(validToRaw);
+
+  if (Number.isNaN(validFrom.getTime()) || Number.isNaN(validTo.getTime())) {
+    fail("Las fechas no son válidas.");
+  }
+
+  if (!(validTo > validFrom)) {
+    fail("La fecha hasta tiene que ser después de la de inicio.");
+  }
+
+  const { supabase, property } = await loadOwnedProperty(propertyId);
+  const { error } = await supabase.from("invitations").insert({
+    guest_name: guestName,
+    property_id: property.id,
+    neighborhood_id: property.neighborhood_id,
+    created_by_user_id: user.id,
+    valid_from: validFrom.toISOString(),
+    valid_to: validTo.toISOString(),
+    is_single_use: isSingleUse,
+    status: "READY",
+    qr_token: crypto.randomUUID(),
+  });
+
+  if (error) {
+    fail(error.message);
+  }
+
+  redirect("/pases?created=door");
 }
 
 export async function revokeInvitation(formData: FormData) {

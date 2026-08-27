@@ -33,16 +33,26 @@ export function gateTypeLabel(type: string) {
   return GATE_TYPE_LABEL[type] ?? type;
 }
 
-export type PassStatus = "active" | "scheduled" | "expired" | "revoked";
+export type PassStatus =
+  | "waiting"
+  | "active"
+  | "scheduled"
+  | "expired"
+  | "revoked";
 
 export function passStatus(input: {
   is_revoked: boolean;
   valid_from: string;
   valid_to: string;
+  status?: "DRAFT" | "READY";
   now?: Date;
 }): PassStatus {
   if (input.is_revoked) {
     return "revoked";
+  }
+
+  if (input.status === "DRAFT") {
+    return "waiting";
   }
 
   const now = input.now ?? new Date();
@@ -61,6 +71,7 @@ export function passStatus(input: {
 }
 
 export const PASS_STATUS_LABEL: Record<PassStatus, string> = {
+  waiting: "Esperando datos",
   active: "Activo",
   scheduled: "Programado",
   expired: "Vencido",

@@ -1,6 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import {
+  canCreateNeighborhood,
+  isSuperadmin,
+  requireSession,
+} from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 function fail(message: string): never {
@@ -53,11 +58,31 @@ export async function updateProperty(formData: FormData) {
 }
 
 export async function createNeighborhood(formData: FormData) {
+  const session = await requireSession();
+
+  if (!canCreateNeighborhood(session)) {
+    fail("Solo el admin del complejo puede crear barrios.");
+  }
+
   const name = String(formData.get("name") ?? "").trim();
-  const complexId = String(formData.get("complex_id") ?? "") || null;
+  let complexId = String(formData.get("complex_id") ?? "") || null;
 
   if (!name) {
     fail("El barrio necesita un nombre.");
+  }
+
+  if (!isSuperadmin(session)) {
+    const allowed = session.roles
+      .filter((row) => row.role === "COMPLEX_ADMIN" && row.complex_id)
+      .map((row) => row.complex_id as string);
+
+    if (!complexId) {
+      complexId = allowed[0] ?? null;
+    }
+
+    if (!complexId || !allowed.includes(complexId)) {
+      fail("El barrio tiene que pertenecer a un complejo que administres.");
+    }
   }
 
   const supabase = await createClient();

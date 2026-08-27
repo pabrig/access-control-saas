@@ -10,7 +10,7 @@ Identity is split: `auth.users` (Supabase Auth) and `public.profiles` (`id` refe
 4. **properties:** Linked to a neighborhood.
 5. **user_roles:** Scoped RBAC assignment (`SUPERADMIN`, `COMPLEX_ADMIN`, `NEIGHBORHOOD_ADMIN`, `SECURITY`, `OWNER`).
 6. **shifts:** Active gate assignment for `SECURITY`.
-7. **invitations:** Guest QR (`qr_token` unique).
+7. **invitations:** Guest pass. `share_token` is the WhatsApp/email link. `qr_token` is minted when the guest claims (`READY`) or when the owner creates a walk-up pass.
 8. **invitation_vehicles:** Cars on a pass. Argentine plates only: `AR_OLD` (`ABC 123`) or `AR_MERCOSUR` (`AB 123 CD`).
 9. **invitation_passengers:** People in each car (one driver per vehicle). Validated visually at the gate.
 10. **access_logs:** Movement history written by the validation API. Optional `vehicle_id` when the guard typed a matching plate.

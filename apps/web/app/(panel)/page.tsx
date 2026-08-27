@@ -26,6 +26,7 @@ export default async function DashboardPage() {
       .from("invitations")
       .select("id", { count: "exact", head: true })
       .eq("is_revoked", false)
+      .eq("status", "READY")
       .lte("valid_from", nowIso)
       .gte("valid_to", nowIso),
     supabase
@@ -39,7 +40,7 @@ export default async function DashboardPage() {
     supabase
       .from("invitations")
       .select(
-        "id, guest_name, valid_from, valid_to, is_revoked, properties(lot_number, street_name)",
+        "id, guest_name, valid_from, valid_to, is_revoked, status, properties(lot_number, street_name)",
       )
       .order("created_at", { ascending: false })
       .limit(8),
@@ -62,7 +63,7 @@ export default async function DashboardPage() {
         title={`Hola, ${session.firstName}`}
         description={
           owner
-            ? "Creá un pase, mostralo en la barrera y mirá si tu visita ya entró."
+            ? "Invitá con un link. Tu visita completa los datos y muestra el QR en la barrera."
             : admin
               ? "Un vistazo de pases, lotes y lo que pasó hoy en la barrera."
               : "Este panel es de consulta. El escaneo se hace en la app de barrera."
@@ -106,7 +107,7 @@ export default async function DashboardPage() {
           {(invitations ?? []).length === 0 ? (
             <Empty
               title="Todavía no hay pases"
-              description="Cuando invites a alguien, el QR aparece acá."
+              description="Cuando invites a alguien, el link aparece acá."
             />
           ) : (
             <ul>
@@ -120,7 +121,7 @@ export default async function DashboardPage() {
                 return (
                   <li className={ui.row} key={invitation.id}>
                     <div>
-                      <strong>{invitation.guest_name}</strong>
+                      <strong>{invitation.guest_name ?? "Esperando datos"}</strong>
                       <p className={ui.muted}>
                         {property ? lotLabel(property) : "Lot or house"} · hasta{" "}
                         {formatDateTime(invitation.valid_to)}

@@ -91,7 +91,7 @@ export function Badge({
   const className =
     status === "active"
       ? styles.badgeActive
-      : status === "scheduled"
+      : status === "waiting" || status === "scheduled"
         ? styles.badgeScheduled
         : status === "expired"
           ? styles.badgeExpired

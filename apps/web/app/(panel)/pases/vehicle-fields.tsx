@@ -65,8 +65,7 @@ export function VehicleFields() {
     <fieldset className={styles.fieldset}>
       <legend>Autos y pasajeros</legend>
       <p className={ui.muted}>
-        La visita llega en uno o más autos. Patente argentina AAA 000 o AA000AA.
-        Cada auto puede traer más de una persona.
+        Si venís en auto, cargá la patente (AAA 000 o AA000AA) y quién viaja.
       </p>
       <input type="hidden" name="vehicle_count" value={vehicles.length} />
 

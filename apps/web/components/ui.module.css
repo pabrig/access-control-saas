@@ -251,6 +251,35 @@
   font-size: 14px;
 }
 
+.inlineAdd {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--brand-soft) 50%, var(--surface));
+  border: 1px dashed color-mix(in srgb, var(--brand) 22%, var(--line));
+}
+
+.inlineAdd summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.inlineAdd summary::-webkit-details-marker {
+  color: var(--brand);
+}
+
+.groupTitle {
+  margin: 20px 0 8px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .stack {
   display: grid;
   gap: 16px;

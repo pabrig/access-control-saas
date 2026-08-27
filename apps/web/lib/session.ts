@@ -69,6 +69,10 @@ export function isSuperadmin(session: Session) {
   return hasRole(session, "SUPERADMIN");
 }
 
+export function canCreateNeighborhood(session: Session) {
+  return hasRole(session, "SUPERADMIN", "COMPLEX_ADMIN");
+}
+
 export function isOwner(session: Session) {
   return hasRole(session, "OWNER");
 }

@@ -9,10 +9,20 @@ import {
   toLocalInput,
 } from "@/lib/format";
 import { accessActionLabel, passStatus } from "@/lib/labels";
+import {
+  inviteShareUrl,
+  mailShareHref,
+  publicAppUrl,
+  whatsappShareHref,
+} from "@/lib/invite-url";
 import { asOne } from "@/lib/relations";
 import { createClient } from "@/lib/supabase/server";
-import { createInvitation, revokeInvitation } from "./actions";
-import { VehicleFields } from "./vehicle-fields";
+import { CopyLinkButton } from "./copy-link-button";
+import {
+  createDoorInvite,
+  createShareInvite,
+  revokeInvitation,
+} from "./actions";
 import styles from "./pases.module.css";
 
 export default async function PasesPage({
@@ -21,6 +31,7 @@ export default async function PasesPage({
   searchParams: Promise<{ error?: string; created?: string }>;
 }) {
   const { error: formError, created } = await searchParams;
+  const origin = await publicAppUrl();
   const supabase = await createClient();
 
   const [{ data: invitations, error }, { data: properties }] =
@@ -28,7 +39,7 @@ export default async function PasesPage({
       supabase
         .from("invitations")
         .select(
-          "id, guest_name, guest_dni, valid_from, valid_to, is_revoked, is_single_use, qr_token, properties(lot_number, street_name), invitation_vehicles(id, plate_display, plate_format, color, invitation_passengers(full_name, dni, is_driver))",
+          "id, guest_name, guest_dni, valid_from, valid_to, is_revoked, is_single_use, qr_token, share_token, status, properties(lot_number, street_name), invitation_vehicles(id, plate_display, plate_format, color, invitation_passengers(full_name, dni, is_driver))",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -71,18 +82,19 @@ export default async function PasesPage({
   const withQr = await Promise.all(
     (invitations ?? []).map(async (invitation) => ({
       ...invitation,
-      qrDataUrl: await QRCode.toDataURL(invitation.qr_token, {
-        margin: 1,
-        width: 168,
-      }),
+      shareUrl: inviteShareUrl(origin, invitation.share_token),
+      qrDataUrl: invitation.qr_token
+        ? await QRCode.toDataURL(invitation.qr_token, {
+            margin: 1,
+            width: 168,
+          })
+        : null,
     })),
   );
 
   const now = new Date();
   const defaultFrom = toLocalInput(now);
-  const defaultTo = toLocalInput(
-    new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const defaultTo = toLocalInput(new Date(now.getTime() + 24 * 60 * 60 * 1000));
   const canCreate = (properties ?? []).length > 0;
   const lots = properties ?? [];
 
@@ -91,29 +103,29 @@ export default async function PasesPage({
       <PageHeader
         kicker="Visitas"
         title="Pases"
-        description="Un pase es el QR que mostrás en la barrera. Si vienen en auto, cargá patente y quién viaja."
+        description="Invitá con un link. Tu visita completa los datos y el QR aparece en su celular."
       />
 
       {formError ? <Banner tone="danger">{formError}</Banner> : null}
-      {created ? (
-        <Banner>Pase listo. Mostrá el QR o mandáselo a tu visita.</Banner>
+      {created === "share" ? (
+        <Banner>
+          Invitación lista. Mandala por WhatsApp o correo. El QR lo va a ver tu
+          visita.
+        </Banner>
+      ) : null}
+      {created === "door" ? (
+        <Banner>Pase en puerta listo. Mostrá el QR en la barrera.</Banner>
       ) : null}
       {error ? <Banner tone="danger">{error.message}</Banner> : null}
 
       {canCreate ? (
         <section className={ui.card}>
-          <h2>Nuevo pase</h2>
-          <form action={createInvitation} className={ui.form}>
-            <div className={ui.formRow}>
-              <label>
-                Nombre de la visita
-                <input name="guest_name" required maxLength={120} />
-              </label>
-              <label>
-                DNI (opcional)
-                <input name="guest_dni" maxLength={32} />
-              </label>
-            </div>
+          <h2>Invitar</h2>
+          <p className={ui.muted}>
+            Elegí hasta cuándo puede entrar. No hace falta el nombre ni la
+            patente: eso lo carga quien viene.
+          </p>
+          <form action={createShareInvite} className={ui.form}>
             {lots.length === 1 ? (
               <>
                 <input type="hidden" name="property_id" value={lots[0]!.id} />
@@ -156,13 +168,68 @@ export default async function PasesPage({
             </div>
             <label className={ui.check}>
               <input type="checkbox" name="is_single_use" />
-              Un solo uso (se apaga al entrar al lote)
+              Un solo uso
             </label>
-            <VehicleFields />
             <button className={ui.button} type="submit">
-              Crear QR
+              Crear link para compartir
             </button>
           </form>
+          <details className={styles.door}>
+            <summary>La visita ya está en la puerta</summary>
+            <p className={ui.muted}>
+              Solo un nombre. El QR queda listo ahora, en este teléfono.
+            </p>
+            <form action={createDoorInvite} className={ui.form}>
+              {lots.length === 1 ? (
+                <input type="hidden" name="property_id" value={lots[0]!.id} />
+              ) : (
+                <label>
+                  Lote
+                  <select name="property_id" required defaultValue="">
+                    <option value="" disabled>
+                      Elegí el lote
+                    </option>
+                    {lots.map((property) => (
+                      <option key={property.id} value={property.id}>
+                        {lotLabel(property)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label>
+                Nombre
+                <input name="guest_name" required maxLength={120} />
+              </label>
+              <div className={ui.formRow}>
+                <label>
+                  Desde
+                  <input
+                    type="datetime-local"
+                    name="valid_from"
+                    required
+                    defaultValue={defaultFrom}
+                  />
+                </label>
+                <label>
+                  Hasta
+                  <input
+                    type="datetime-local"
+                    name="valid_to"
+                    required
+                    defaultValue={defaultTo}
+                  />
+                </label>
+              </div>
+              <label className={ui.check}>
+                <input type="checkbox" name="is_single_use" />
+                Un solo uso
+              </label>
+              <button className={ui.buttonSecondary} type="submit">
+                Crear QR ahora
+              </button>
+            </form>
+          </details>
         </section>
       ) : (
         <Empty
@@ -174,7 +241,7 @@ export default async function PasesPage({
       {withQr.length === 0 ? (
         <Empty
           title="Todavía no hay pases"
-          description="Creá el primero con el nombre de tu visita."
+          description="Creá un link y mandáselo a tu visita."
         />
       ) : (
         <ul className={styles.list}>
@@ -185,12 +252,13 @@ export default async function PasesPage({
             }>(invitation.properties);
             const movements = logsByInvitation.get(invitation.id) ?? [];
             const status = passStatus(invitation);
+            const ready = invitation.status === "READY";
 
             return (
               <li className={styles.pass} key={invitation.id}>
                 <div className={styles.meta}>
                   <div className={styles.passHead}>
-                    <h2>{invitation.guest_name}</h2>
+                    <h2>{invitation.guest_name ?? "Esperando a la visita"}</h2>
                     <Badge status={status} />
                   </div>
                   <p>
@@ -204,6 +272,21 @@ export default async function PasesPage({
                     {formatDateTime(invitation.valid_from)} →{" "}
                     {formatDateTime(invitation.valid_to)}
                   </p>
+                  <div className={styles.share}>
+                    <a
+                      className={ui.button}
+                      href={whatsappShareHref(invitation.shareUrl, ready)}
+                    >
+                      WhatsApp
+                    </a>
+                    <a
+                      className={ui.buttonSecondary}
+                      href={mailShareHref(invitation.shareUrl, ready)}
+                    >
+                      Correo
+                    </a>
+                    <CopyLinkButton url={invitation.shareUrl} />
+                  </div>
                   {(invitation.invitation_vehicles ?? []).length > 0 ? (
                     <section>
                       <h3>Autos</h3>
@@ -228,7 +311,9 @@ export default async function PasesPage({
                       </ul>
                     </section>
                   ) : null}
-                  {status === "active" || status === "scheduled" ? (
+                  {status === "active" ||
+                  status === "scheduled" ||
+                  status === "waiting" ? (
                     <form action={revokeInvitation}>
                       <input type="hidden" name="id" value={invitation.id} />
                       <button className={ui.buttonDanger} type="submit">
@@ -239,7 +324,11 @@ export default async function PasesPage({
                   <section>
                     <h3>Qué pasó</h3>
                     {movements.length === 0 ? (
-                      <p className={ui.muted}>Todavía no lo escanearon.</p>
+                      <p className={ui.muted}>
+                        {ready
+                          ? "Todavía no lo escanearon."
+                          : "La visita todavía no completó el pase."}
+                      </p>
                     ) : (
                       <ol className={styles.timeline}>
                         {movements.map((log) => {
@@ -266,16 +355,23 @@ export default async function PasesPage({
                     )}
                   </section>
                 </div>
-                <figure className={styles.qr}>
-                  <Image
-                    alt={`QR de ${invitation.guest_name}`}
-                    height={168}
-                    src={invitation.qrDataUrl}
-                    unoptimized
-                    width={168}
-                  />
-                  <figcaption>Mostrá este código en la barrera</figcaption>
-                </figure>
+                {invitation.qrDataUrl ? (
+                  <figure className={styles.qr}>
+                    <Image
+                      alt={`QR de ${invitation.guest_name ?? "pase"}`}
+                      height={168}
+                      src={invitation.qrDataUrl}
+                      unoptimized
+                      width={168}
+                    />
+                    <figcaption>Mostrá este código en la barrera</figcaption>
+                  </figure>
+                ) : (
+                  <p className={styles.waitingQr}>
+                    El QR se genera en el celular de la visita cuando completa
+                    el link.
+                  </p>
+                )}
               </li>
             );
           })}

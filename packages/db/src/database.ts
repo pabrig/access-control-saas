@@ -213,13 +213,15 @@ export type Database = {
           created_at: string;
           created_by_user_id: string;
           guest_dni: string | null;
-          guest_name: string;
+          guest_name: string | null;
           id: string;
           is_revoked: boolean;
           is_single_use: boolean;
           neighborhood_id: string;
           property_id: string;
-          qr_token: string;
+          qr_token: string | null;
+          share_token: string;
+          status: Database["public"]["Enums"]["invitation_lifecycle"];
           valid_from: string;
           valid_to: string;
         };
@@ -227,13 +229,15 @@ export type Database = {
           created_at?: string;
           created_by_user_id: string;
           guest_dni?: string | null;
-          guest_name: string;
+          guest_name?: string | null;
           id?: string;
           is_revoked?: boolean;
           is_single_use?: boolean;
           neighborhood_id: string;
           property_id: string;
-          qr_token?: string;
+          qr_token?: string | null;
+          share_token?: string;
+          status?: Database["public"]["Enums"]["invitation_lifecycle"];
           valid_from: string;
           valid_to: string;
         };
@@ -241,13 +245,15 @@ export type Database = {
           created_at?: string;
           created_by_user_id?: string;
           guest_dni?: string | null;
-          guest_name?: string;
+          guest_name?: string | null;
           id?: string;
           is_revoked?: boolean;
           is_single_use?: boolean;
           neighborhood_id?: string;
           property_id?: string;
-          qr_token?: string;
+          qr_token?: string | null;
+          share_token?: string;
+          status?: Database["public"]["Enums"]["invitation_lifecycle"];
           valid_from?: string;
           valid_to?: string;
         };
@@ -464,10 +470,35 @@ export type Database = {
     };
     Functions: {
       active_shift_gate_ids: { Args: never; Returns: string[] };
+      claim_invite: {
+        Args: {
+          p_guest_dni: string | null;
+          p_guest_name: string;
+          p_share: string;
+          p_vehicles: Json;
+        };
+        Returns: {
+          guest_name: string;
+          qr_token: string;
+        }[];
+      };
       is_superadmin: { Args: never; Returns: boolean };
       managed_complex_ids: { Args: never; Returns: string[] };
       managed_neighborhood_ids: { Args: never; Returns: string[] };
       owned_property_ids: { Args: never; Returns: string[] };
+      preview_invite: {
+        Args: { p_share: string };
+        Returns: {
+          guest_name: string | null;
+          is_revoked: boolean;
+          lot_number: string;
+          qr_token: string | null;
+          status: Database["public"]["Enums"]["invitation_lifecycle"];
+          street_name: string | null;
+          valid_from: string;
+          valid_to: string;
+        }[];
+      };
       security_visible_complex_ids: { Args: never; Returns: string[] };
       security_visible_neighborhood_ids: { Args: never; Returns: string[] };
     };
@@ -479,6 +510,7 @@ export type Database = {
         | "EXITED"
         | "EXPIRED";
       gate_type: "MAIN_COMPLEX" | "INTERNAL_NEIGHBORHOOD";
+      invitation_lifecycle: "DRAFT" | "READY";
       plate_format: "AR_OLD" | "AR_MERCOSUR";
       role:
         | "SUPERADMIN"
@@ -624,6 +656,7 @@ export const Constants = {
         "EXPIRED",
       ],
       gate_type: ["MAIN_COMPLEX", "INTERNAL_NEIGHBORHOOD"],
+      invitation_lifecycle: ["DRAFT", "READY"],
       plate_format: ["AR_OLD", "AR_MERCOSUR"],
       role: [
         "SUPERADMIN",

@@ -90,6 +90,43 @@
   text-align: center;
 }
 
+.share {
+  display: grid;
+  gap: 8px;
+}
+
+.share a,
+.share button {
+  min-height: 44px;
+}
+
+.door {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.door summary {
+  cursor: pointer;
+  font-weight: 650;
+  color: var(--brand);
+}
+
+.waitingQr {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (min-width: 560px) {
+  .share {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (min-width: 800px) {
   .pass {
     grid-template-columns: minmax(0, 1fr) 200px;
