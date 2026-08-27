@@ -12,7 +12,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 function fail(path: string, message: string): never {
-  redirect(`${path}?error=${encodeURIComponent(message)}`);
+  const separator = path.includes("?") ? "&" : "?";
+  redirect(`${path}${separator}error=${encodeURIComponent(message)}`);
 }
 
 function emptyToNull(value: FormDataEntryValue | null) {
@@ -47,7 +48,7 @@ export async function createProperty(formData: FormData) {
 
   if (!neighborhoodId || !fields.lot_number) {
     fail(
-      "/lotes",
+      "/lotes/nuevo",
       isNeighborhoodAdmin(session)
         ? "El lote necesita un número."
         : "Elegí el barrio y el número de lote.",
@@ -55,16 +56,20 @@ export async function createProperty(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("properties").insert({
-    neighborhood_id: neighborhoodId,
-    ...fields,
-  });
+  const { data, error } = await supabase
+    .from("properties")
+    .insert({
+      neighborhood_id: neighborhoodId,
+      ...fields,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    fail("/lotes", error.message);
+  if (error || !data) {
+    fail("/lotes/nuevo", error?.message ?? "No se pudo guardar el lote.");
   }
 
-  redirect("/lotes?created=1");
+  redirect(`/lotes/${data.id}?created=1`);
 }
 
 export async function updateProperty(formData: FormData) {
@@ -72,31 +77,31 @@ export async function updateProperty(formData: FormData) {
   const fields = lotFields(formData);
 
   if (!id || !fields.lot_number) {
-    fail("/lotes", "El lote necesita un número.");
+    fail(id ? `/lotes/${id}/editar` : "/lotes", "El lote necesita un número.");
   }
 
   const supabase = await createClient();
   const { error } = await supabase.from("properties").update(fields).eq("id", id);
 
   if (error) {
-    fail("/lotes", error.message);
+    fail(`/lotes/${id}/editar`, error.message);
   }
 
-  redirect("/lotes");
+  redirect(`/lotes/${id}`);
 }
 
 export async function createNeighborhood(formData: FormData) {
   const session = await requireSession();
 
   if (!canCreateNeighborhood(session)) {
-    fail("/lotes", "Solo el admin del complejo puede crear barrios.");
+    fail("/barrios/nuevo", "Solo el admin del complejo puede crear barrios.");
   }
 
   const name = String(formData.get("name") ?? "").trim();
   let complexId = String(formData.get("complex_id") ?? "") || null;
 
   if (!name) {
-    fail("/lotes", "El barrio necesita un nombre.");
+    fail("/barrios/nuevo", "El barrio necesita un nombre.");
   }
 
   if (!isSuperadmin(session)) {
@@ -110,23 +115,27 @@ export async function createNeighborhood(formData: FormData) {
 
     if (!complexId || !allowed.includes(complexId)) {
       fail(
-        "/lotes",
+        "/barrios/nuevo",
         "El barrio tiene que pertenecer a un complejo que administres.",
       );
     }
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("neighborhoods").insert({
-    name,
-    complex_id: complexId,
-  });
+  const { data, error } = await supabase
+    .from("neighborhoods")
+    .insert({
+      name,
+      complex_id: complexId,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    fail("/lotes", error.message);
+  if (error || !data) {
+    fail("/barrios/nuevo", error?.message ?? "No se pudo crear el barrio.");
   }
 
-  redirect("/lotes?barrio=1");
+  redirect(`/barrios/${data.id}`);
 }
 
 export async function assignResident(formData: FormData) {

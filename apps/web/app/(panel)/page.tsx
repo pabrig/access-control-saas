@@ -1,75 +1,32 @@
 import Link from "next/link";
-import { Badge, Banner, Empty, PageHeader, Stat } from "@/components/ui";
+import { Badge, Banner, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import { isBookingLabel } from "@/lib/amenities";
-import {
-  formatDateTime,
-  formatRange,
-  formatTime,
-  initials,
-} from "@/lib/format";
-import {
-  accessActionLabel,
-  accessActionShort,
-  isExitAction,
-  passStatus,
-} from "@/lib/labels";
+import { formatRange, formatTime, initials } from "@/lib/format";
+import { accessActionShort, isExitAction, passStatus } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
-import { NeighborhoodHome } from "./neighborhood-home";
-import { isAdmin, isNeighborhoodAdmin, isOwner, isSecurity, requireSession } from "@/lib/session";
+import { CommunityHome } from "./community-home";
+import {
+  isAdmin,
+  isOwner,
+  isSecurity,
+  requireSession,
+} from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
   const session = await requireSession();
-  const supabase = await createClient();
-  const nowIso = new Date().toISOString();
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
   const owner = isOwner(session);
   const admin = isAdmin(session);
   const resident = owner && !admin;
 
-  if (isNeighborhoodAdmin(session)) {
-    return <NeighborhoodHome session={session} />;
+  if (admin) {
+    return <CommunityHome session={session} />;
   }
 
-  const [
-    { count: activePasses },
-    { count: todayMoves },
-    { count: propertyCount },
-    { count: peopleCount },
-    { count: waitingPasses },
-    { count: openShifts },
-    { data: invitations },
-    { data: logs },
-  ] = await Promise.all([
-    supabase
-      .from("invitations")
-      .select("id", { count: "exact", head: true })
-      .eq("is_revoked", false)
-      .eq("status", "READY")
-      .lte("valid_from", nowIso)
-      .gte("valid_to", nowIso),
-    supabase
-      .from("access_logs")
-      .select("id", { count: "exact", head: true })
-      .gte("timestamp", startOfDay.toISOString()),
-    supabase.from("properties").select("id", { count: "exact", head: true }),
-    isAdmin(session)
-      ? supabase.from("profiles").select("id", { count: "exact", head: true })
-      : Promise.resolve({ count: 0 }),
-    supabase
-      .from("invitations")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "DRAFT")
-      .eq("is_revoked", false),
-    admin
-      ? supabase
-          .from("shifts")
-          .select("id", { count: "exact", head: true })
-          .is("ended_at", null)
-      : Promise.resolve({ count: 0 }),
+  const supabase = await createClient();
+  const [{ data: invitations }, { data: logs }] = await Promise.all([
     supabase
       .from("invitations")
       .select("id, guest_name, valid_from, valid_to, is_revoked, status")
@@ -78,10 +35,10 @@ export default async function DashboardPage() {
     supabase
       .from("access_logs")
       .select(
-        "id, action_type, timestamp, invitation_id, gates(name), invitations(id, guest_name)",
+        "id, action_type, timestamp, invitation_id, invitations(id, guest_name)",
       )
       .order("timestamp", { ascending: false })
-      .limit(resident ? 4 : 8),
+      .limit(4),
   ]);
 
   const liveInvites = (invitations ?? []).filter((row) => {
@@ -201,132 +158,20 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={`Hola, ${session.firstName}`}
-        description={
-          admin
-            ? "Ingresos del día y estado de las invitaciones."
-            : "Consulta. El escaneo se hace en la app de barrera."
-        }
-        actions={
-          owner || admin ? (
-            <Link className={ui.button} href="/pases">
-              Nueva invitación
-            </Link>
-          ) : undefined
-        }
+        description="Consulta. El escaneo se hace en la app de barrera."
       />
-
-      {isSecurity(session) && !admin ? (
+      {isSecurity(session) ? (
         <Banner tone="warn">
           Para escanear QRs abrí la app de barrera (puerto 3002) con la misma
           cuenta de seguridad.
         </Banner>
       ) : null}
-
-      <section className={ui.stats}>
-        <Stat href="/pases" label="Pases activos" value={activePasses ?? 0} />
-        <Stat href="/movimientos" label="Hoy" value={todayMoves ?? 0} />
-        <Stat href="/lotes" label="Lotes" value={propertyCount ?? 0} />
-        {admin ? (
-          <Stat href="/personas" label="Personas" value={peopleCount ?? 0} />
-        ) : null}
-      </section>
-
-      {admin ? (
-        <section className={ui.split} style={{ marginBottom: 16 }}>
-          <article className={ui.card}>
-            <h2>Alertas de seguridad</h2>
-            <ul>
-              <li className={ui.row}>
-                <div>
-                  <strong>{openShifts ?? 0} turnos abiertos</strong>
-                  <p className={ui.muted}>Guardias con barrera activa ahora.</p>
-                </div>
-              </li>
-              <li className={ui.row}>
-                <div>
-                  <strong>{waitingPasses ?? 0} invitaciones sin aceptar</strong>
-                  <p className={ui.muted}>Todavía no cargaron nombre ni QR.</p>
-                </div>
-              </li>
-            </ul>
-          </article>
-          <article className={ui.card}>
-            <h2>Horario de servicios</h2>
-            <p>
-              Lunes a viernes, 8:00 a 18:00. El atajo Servicio arma un ingreso
-              de un solo uso con ese corte.
-            </p>
-            <p className={ui.muted}>
-              Fuera de hora, invitá como invitado habitual.
-            </p>
-          </article>
-        </section>
-      ) : null}
-
-      <div className={ui.split}>
-        <section className={ui.card}>
-          <h2>Invitaciones recientes</h2>
-          {(invitations ?? []).length === 0 ? (
-            <Empty
-              title="Todavía no hay invitaciones"
-              description="Cuando invites a alguien, el link aparece acá."
-            />
-          ) : (
-            <ul>
-              {(invitations ?? []).map((invitation) => {
-                const status = passStatus(invitation);
-
-                return (
-                  <li className={ui.row} key={invitation.id}>
-                    <Link href="/pases">
-                      <strong>{invitation.guest_name ?? "Sin aceptar"}</strong>
-                      <p className={ui.muted}>
-                        {formatRange(
-                          invitation.valid_from,
-                          invitation.valid_to,
-                        )}
-                      </p>
-                    </Link>
-                    <Badge status={status} />
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
-        <section className={ui.card}>
-          <h2>{admin ? "Libro de guardia" : "Últimos movimientos"}</h2>
-          {(logs ?? []).length === 0 ? (
-            <Empty
-              title="Sin movimientos"
-              description="Cuando escaneen un pase, el historial aparece acá."
-            />
-          ) : (
-            <ul>
-              {(logs ?? []).map((log) => {
-                const gate = asOne<{ name: string }>(log.gates);
-                const invitation = asOne<{ guest_name: string }>(
-                  log.invitations,
-                );
-
-                return (
-                  <li className={ui.row} key={log.id}>
-                    <div>
-                      <strong>{invitation?.guest_name ?? "Invitado"}</strong>
-                      <p className={ui.muted}>
-                        {accessActionLabel(log.action_type)}
-                        {gate?.name ? ` · ${gate.name}` : ""} ·{" "}
-                        {formatDateTime(log.timestamp)}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-      </div>
+      <Link className={ui.card} href="/movimientos">
+        <h2>Movimientos</h2>
+        <p className={ui.muted}>
+          Entradas y salidas. El detalle está en el historial.
+        </p>
+      </Link>
     </>
   );
 }

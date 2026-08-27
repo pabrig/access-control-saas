@@ -18,6 +18,7 @@ const NAV_ICON = {
   "/reservas": "calendar",
   "/movimientos": "clock",
   "/lotes": "home",
+  "/barrios": "home",
   "/personas": "users",
   "/barreras": "car",
   "/turnos": "clock",
@@ -47,9 +48,18 @@ export function AppShell({
       : nav;
 
   function isActive(href: string) {
-    return href === "/"
-      ? pathname === "/"
-      : pathname === href || pathname.startsWith(`${href}/`);
+    if (href === "/") {
+      return pathname === "/";
+    }
+    if (href === "/lotes") {
+      return (
+        pathname === "/lotes" ||
+        pathname.startsWith("/lotes/") ||
+        pathname === "/barrios" ||
+        pathname.startsWith("/barrios/")
+      );
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
   }
 
   return (

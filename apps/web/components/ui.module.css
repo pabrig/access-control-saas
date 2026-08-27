@@ -84,6 +84,14 @@
   letter-spacing: -0.02em;
 }
 
+a.card {
+  gap: 8px;
+}
+
+a.card:hover {
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
+}
+
 .banner {
   padding: 12px 16px;
   margin-bottom: 16px;
@@ -237,6 +245,18 @@
   list-style: none;
   display: grid;
   gap: 12px;
+}
+
+.cardGrid {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .cardGrid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
 }
 
 .row {
