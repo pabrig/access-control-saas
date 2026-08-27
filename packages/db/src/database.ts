@@ -492,6 +492,7 @@ export type Database = {
           guest_name: string | null;
           is_revoked: boolean;
           lot_number: string;
+          neighborhood_name: string;
           qr_token: string | null;
           status: Database["public"]["Enums"]["invitation_lifecycle"];
           street_name: string | null;

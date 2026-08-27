@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { corsOrigins, env } from "./env.js";
+import { lookupAccess } from "./lookup-access.js";
 import { createUserClient } from "./supabase.js";
 import { validateAccess } from "./validate-access.js";
 
@@ -13,6 +14,7 @@ app.get("/", (_req, res) => {
   res.json({
     service: "access-control-api",
     health: "/health",
+    lookup: "POST /access/lookup",
     validate: "POST /access/validate",
   });
 });
@@ -21,7 +23,7 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/access/validate", async (req, res) => {
+async function requireApiUser(req: express.Request, res: express.Response) {
   const header = req.header("authorization");
   const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
 
@@ -31,7 +33,7 @@ app.post("/access/validate", async (req, res) => {
       code: "UNAUTHENTICATED",
       message: "Missing bearer token",
     });
-    return;
+    return null;
   }
 
   const userClient = createUserClient(token);
@@ -44,6 +46,44 @@ app.post("/access/validate", async (req, res) => {
     res
       .status(401)
       .json({ ok: false, code: "UNAUTHENTICATED", message: "Invalid session" });
+    return null;
+  }
+
+  return user;
+}
+
+app.post("/access/lookup", async (req, res) => {
+  const user = await requireApiUser(req, res);
+  if (!user) {
+    return;
+  }
+
+  try {
+    const result = await lookupAccess(user.id, req.body);
+
+    if (!result.ok) {
+      const status =
+        result.code === "INVALID_BODY"
+          ? 400
+          : result.code === "NO_SHIFT"
+            ? 403
+            : 403;
+      res.status(status).json(result);
+      return;
+    }
+
+    res.json(result);
+  } catch (cause) {
+    console.error(cause);
+    res
+      .status(500)
+      .json({ ok: false, code: "INTERNAL", message: "Lookup failed" });
+  }
+});
+
+app.post("/access/validate", async (req, res) => {
+  const user = await requireApiUser(req, res);
+  if (!user) {
     return;
   }
 

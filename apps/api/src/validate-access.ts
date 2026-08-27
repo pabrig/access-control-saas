@@ -5,6 +5,7 @@ import {
   shouldRevokeSingleUse,
 } from "./access-rules.js";
 import { nextAccessAction, type AccessStatus } from "./access-state.js";
+import { assertGateOperator } from "./gate-auth.js";
 import { matchInvitationPlate, parsePlate } from "./plates.js";
 import { serviceClient } from "./supabase.js";
 
@@ -12,6 +13,7 @@ const bodySchema = z.object({
   qrToken: z.string().uuid(),
   gateId: z.string().uuid(),
   plate: z.string().max(12).optional(),
+  commit: z.boolean().optional(),
 });
 
 export type ValidateErrorCode =
@@ -46,10 +48,15 @@ export type ValidateResult =
       invitation: {
         id: string;
         guestName: string;
+        guestDni: string | null;
         propertyId: string;
+        lotNumber: string;
+        streetName: string | null;
+        neighborhoodName: string;
       };
       vehicles: InvitationVehicle[];
       matchedPlate: string | null;
+      committed: boolean;
     }
   | { ok: false; code: ValidateErrorCode; message: string };
 
@@ -67,67 +74,17 @@ export async function validateAccess(
   }
 
   const { qrToken, gateId, plate } = parsed.data;
+  const commit = parsed.data.commit !== false;
 
-  const { data: profile, error: profileError } = await serviceClient
-    .from("profiles")
-    .select("id, is_active")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (profileError) {
-    throw profileError;
-  }
-
-  if (!profile?.is_active) {
-    return { ok: false, code: "INACTIVE_USER", message: "User is inactive" };
-  }
-
-  const { data: roles, error: rolesError } = await serviceClient
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-
-  if (rolesError) {
-    throw rolesError;
-  }
-
-  const isSuperadmin = roles?.some((row) => row.role === "SUPERADMIN") ?? false;
-  const isSecurity = roles?.some((row) => row.role === "SECURITY") ?? false;
-
-  if (!isSuperadmin && !isSecurity) {
-    return {
-      ok: false,
-      code: "NO_SHIFT",
-      message: "Only SECURITY can validate access",
-    };
-  }
-
-  if (!isSuperadmin) {
-    const { data: shift, error: shiftError } = await serviceClient
-      .from("shifts")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("gate_id", gateId)
-      .is("ended_at", null)
-      .maybeSingle();
-
-    if (shiftError) {
-      throw shiftError;
-    }
-
-    if (!shift) {
-      return {
-        ok: false,
-        code: "NO_SHIFT",
-        message: "No active shift on this gate",
-      };
-    }
+  const auth = await assertGateOperator(userId, gateId);
+  if (!auth.ok) {
+    return auth;
   }
 
   const { data: invitation, error: invitationError } = await serviceClient
     .from("invitations")
     .select(
-      "id, guest_name, property_id, neighborhood_id, valid_from, valid_to, is_revoked, is_single_use, status, qr_token",
+      "id, guest_name, guest_dni, property_id, neighborhood_id, valid_from, valid_to, is_revoked, is_single_use, status, qr_token, properties(lot_number, street_name), neighborhoods(name)",
     )
     .eq("qr_token", qrToken)
     .maybeSingle();
@@ -292,30 +249,39 @@ export async function validateAccess(
     return { ok: false, code: "EXPIRED", message: "Invitation has expired" };
   }
 
-  const { error: insertError } = await serviceClient
-    .from("access_logs")
-    .insert({
-      invitation_id: invitation.id,
-      gate_id: gateId,
-      security_user_id: userId,
-      action_type: actionType,
-      vehicle_id: matchedVehicleId,
-    });
+  if (commit) {
+    const { error: insertError } = await serviceClient
+      .from("access_logs")
+      .insert({
+        invitation_id: invitation.id,
+        gate_id: gateId,
+        security_user_id: userId,
+        action_type: actionType,
+        vehicle_id: matchedVehicleId,
+      });
 
-  if (insertError) {
-    throw insertError;
-  }
+    if (insertError) {
+      throw insertError;
+    }
 
-  if (shouldRevokeSingleUse(invitation.is_single_use, actionType)) {
-    const { error: revokeError } = await serviceClient
-      .from("invitations")
-      .update({ is_revoked: true })
-      .eq("id", invitation.id);
+    if (shouldRevokeSingleUse(invitation.is_single_use, actionType)) {
+      const { error: revokeError } = await serviceClient
+        .from("invitations")
+        .update({ is_revoked: true })
+        .eq("id", invitation.id);
 
-    if (revokeError) {
-      throw revokeError;
+      if (revokeError) {
+        throw revokeError;
+      }
     }
   }
+
+  const property = Array.isArray(invitation.properties)
+    ? invitation.properties[0]
+    : invitation.properties;
+  const neighborhoodName = Array.isArray(invitation.neighborhoods)
+    ? invitation.neighborhoods[0]?.name
+    : invitation.neighborhoods?.name;
 
   return {
     ok: true,
@@ -323,9 +289,14 @@ export async function validateAccess(
     invitation: {
       id: invitation.id,
       guestName: invitation.guest_name ?? "Visita",
+      guestDni: invitation.guest_dni,
       propertyId: invitation.property_id,
+      lotNumber: property?.lot_number ?? "",
+      streetName: property?.street_name ?? null,
+      neighborhoodName: neighborhoodName ?? "Barrio",
     },
     vehicles,
     matchedPlate,
+    committed: commit,
   };
 }

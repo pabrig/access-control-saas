@@ -1,7 +1,7 @@
 export const ACCESS_ACTION_LABEL: Record<string, string> = {
   PENDING: "Pendiente",
-  IN_COMPLEX: "Entrada al complejo",
-  IN_PROPERTY: "Entrada a la propiedad",
+  IN_COMPLEX: "Entrada",
+  IN_PROPERTY: "Entrada",
   EXITED: "Salida",
   EXPIRED: "Expirada",
 };

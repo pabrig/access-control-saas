@@ -2,12 +2,7 @@ import Image from "next/image";
 import QRCode from "qrcode";
 import { Badge, Banner, Empty, PageHeader } from "@/components/ui";
 import ui from "@/components/ui.module.css";
-import {
-  formatDateTime,
-  lotLabel,
-  personName,
-  toLocalInput,
-} from "@/lib/format";
+import { formatDateTime, lotLabel, personName } from "@/lib/format";
 import { accessActionLabel, passStatus } from "@/lib/labels";
 import {
   inviteShareUrl,
@@ -18,19 +13,16 @@ import {
 import { asOne } from "@/lib/relations";
 import { createClient } from "@/lib/supabase/server";
 import { CopyLinkButton } from "./copy-link-button";
-import {
-  createDoorInvite,
-  createShareInvite,
-  revokeInvitation,
-} from "./actions";
+import { PassComposer } from "./pass-composer";
+import { revokeInvitation } from "./actions";
 import styles from "./pases.module.css";
 
 export default async function PasesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string }>;
+  searchParams: Promise<{ error?: string; created?: string; tipo?: string }>;
 }) {
-  const { error: formError, created } = await searchParams;
+  const { error: formError, created, tipo } = await searchParams;
   const origin = await publicAppUrl();
   const supabase = await createClient();
 
@@ -92,11 +84,10 @@ export default async function PasesPage({
     })),
   );
 
-  const now = new Date();
-  const defaultFrom = toLocalInput(now);
-  const defaultTo = toLocalInput(new Date(now.getTime() + 24 * 60 * 60 * 1000));
   const canCreate = (properties ?? []).length > 0;
   const lots = properties ?? [];
+  const kind =
+    tipo === "proveedor" ? "provider" : tipo === "evento" ? "event" : "visit";
 
   return (
     <>
@@ -119,118 +110,7 @@ export default async function PasesPage({
       {error ? <Banner tone="danger">{error.message}</Banner> : null}
 
       {canCreate ? (
-        <section className={ui.card}>
-          <h2>Invitar</h2>
-          <p className={ui.muted}>
-            Elegí hasta cuándo puede entrar. No hace falta el nombre ni la
-            patente: eso lo carga quien viene.
-          </p>
-          <form action={createShareInvite} className={ui.form}>
-            {lots.length === 1 ? (
-              <>
-                <input type="hidden" name="property_id" value={lots[0]!.id} />
-                <p className={ui.muted}>{lotLabel(lots[0]!)}</p>
-              </>
-            ) : (
-              <label>
-                Lote
-                <select name="property_id" required defaultValue="">
-                  <option value="" disabled>
-                    Elegí el lote
-                  </option>
-                  {lots.map((property) => (
-                    <option key={property.id} value={property.id}>
-                      {lotLabel(property)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <div className={ui.formRow}>
-              <label>
-                Desde
-                <input
-                  type="datetime-local"
-                  name="valid_from"
-                  required
-                  defaultValue={defaultFrom}
-                />
-              </label>
-              <label>
-                Hasta
-                <input
-                  type="datetime-local"
-                  name="valid_to"
-                  required
-                  defaultValue={defaultTo}
-                />
-              </label>
-            </div>
-            <label className={ui.check}>
-              <input type="checkbox" name="is_single_use" />
-              Un solo uso
-            </label>
-            <button className={ui.button} type="submit">
-              Crear link para compartir
-            </button>
-          </form>
-          <details className={styles.door}>
-            <summary>La visita ya está en la puerta</summary>
-            <p className={ui.muted}>
-              Solo un nombre. El QR queda listo ahora, en este teléfono.
-            </p>
-            <form action={createDoorInvite} className={ui.form}>
-              {lots.length === 1 ? (
-                <input type="hidden" name="property_id" value={lots[0]!.id} />
-              ) : (
-                <label>
-                  Lote
-                  <select name="property_id" required defaultValue="">
-                    <option value="" disabled>
-                      Elegí el lote
-                    </option>
-                    {lots.map((property) => (
-                      <option key={property.id} value={property.id}>
-                        {lotLabel(property)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              <label>
-                Nombre
-                <input name="guest_name" required maxLength={120} />
-              </label>
-              <div className={ui.formRow}>
-                <label>
-                  Desde
-                  <input
-                    type="datetime-local"
-                    name="valid_from"
-                    required
-                    defaultValue={defaultFrom}
-                  />
-                </label>
-                <label>
-                  Hasta
-                  <input
-                    type="datetime-local"
-                    name="valid_to"
-                    required
-                    defaultValue={defaultTo}
-                  />
-                </label>
-              </div>
-              <label className={ui.check}>
-                <input type="checkbox" name="is_single_use" />
-                Un solo uso
-              </label>
-              <button className={ui.buttonSecondary} type="submit">
-                Crear QR ahora
-              </button>
-            </form>
-          </details>
-        </section>
+        <PassComposer key={kind} lots={lots} kind={kind} />
       ) : (
         <Empty
           title="No hay un lote para invitar"
@@ -262,7 +142,7 @@ export default async function PasesPage({
                     <Badge status={status} />
                   </div>
                   <p>
-                    {property ? lotLabel(property) : "Lot or house"}
+                    {property ? lotLabel(property) : "Lote"}
                     {invitation.guest_dni
                       ? ` · DNI ${invitation.guest_dni}`
                       : ""}

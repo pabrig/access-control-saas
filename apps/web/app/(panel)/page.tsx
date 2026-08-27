@@ -13,12 +13,17 @@ export default async function DashboardPage() {
   const nowIso = new Date().toISOString();
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
+  const owner = isOwner(session);
+  const admin = isAdmin(session);
+  const resident = owner && !admin;
 
   const [
     { count: activePasses },
     { count: todayMoves },
     { count: propertyCount },
     { count: peopleCount },
+    { count: waitingPasses },
+    { count: openShifts },
     { data: invitations },
     { data: logs },
   ] = await Promise.all([
@@ -39,6 +44,17 @@ export default async function DashboardPage() {
       : Promise.resolve({ count: 0 }),
     supabase
       .from("invitations")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "DRAFT")
+      .eq("is_revoked", false),
+    admin
+      ? supabase
+          .from("shifts")
+          .select("id", { count: "exact", head: true })
+          .is("ended_at", null)
+      : Promise.resolve({ count: 0 }),
+    supabase
+      .from("invitations")
       .select(
         "id, guest_name, valid_from, valid_to, is_revoked, status, properties(lot_number, street_name)",
       )
@@ -53,19 +69,16 @@ export default async function DashboardPage() {
       .limit(8),
   ]);
 
-  const owner = isOwner(session);
-  const admin = isAdmin(session);
-
   return (
     <>
       <PageHeader
-        kicker={admin ? "Panel de gestión" : owner ? "Tu lote" : "Turno"}
+        kicker={admin ? "Panel de gestión" : resident ? "Tu lote" : "Turno"}
         title={`Hola, ${session.firstName}`}
         description={
-          owner
-            ? "Invitá con un link. Tu visita completa los datos y muestra el QR en la barrera."
+          resident
+            ? "Creá un pase en un toque o reservá el SUM. Tu visita muestra el QR en la barrera."
             : admin
-              ? "Un vistazo de pases, lotes y lo que pasó hoy en la barrera."
+              ? "Ingresos del día, alertas de seguridad y el estado de los pases."
               : "Este panel es de consulta. El escaneo se hace en la app de barrera."
         }
         actions={
@@ -84,22 +97,73 @@ export default async function DashboardPage() {
         </Banner>
       ) : null}
 
+      {resident ? (
+        <nav className={ui.quick} aria-label="Acciones rápidas">
+          <Link className={ui.quickLink} href="/pases?tipo=visita">
+            Visita
+            <span>Pase de 24 h</span>
+          </Link>
+          <Link className={ui.quickLink} href="/pases?tipo=proveedor">
+            Proveedor
+            <span>Hoy, un ingreso</span>
+          </Link>
+          <Link className={ui.quickLink} href="/pases?tipo=evento">
+            Evento
+            <span>Fecha y QR</span>
+          </Link>
+        </nav>
+      ) : null}
+
       <section className={ui.stats}>
         <Stat href="/pases" label="Pases activos" value={activePasses ?? 0} />
         <Stat
           href="/movimientos"
-          label="Movimientos hoy"
+          label="Ingresos de hoy"
           value={todayMoves ?? 0}
         />
         <Stat
           href="/lotes"
-          label={owner && !admin ? "Tu lote" : "Lotes"}
+          label={resident ? "Tu lote" : "Lotes"}
           value={propertyCount ?? 0}
         />
         {admin ? (
           <Stat href="/personas" label="Personas" value={peopleCount ?? 0} />
         ) : null}
       </section>
+
+      {admin ? (
+        <section className={ui.split} style={{ marginBottom: 16 }}>
+          <article className={ui.card}>
+            <h2>Alertas de seguridad</h2>
+            <ul>
+              <li className={ui.row}>
+                <div>
+                  <strong>{openShifts ?? 0} turnos abiertos</strong>
+                  <p className={ui.muted}>Guardias con barrera activa ahora.</p>
+                </div>
+              </li>
+              <li className={ui.row}>
+                <div>
+                  <strong>{waitingPasses ?? 0} pases sin completar</strong>
+                  <p className={ui.muted}>
+                    La visita todavía no cargó nombre ni QR.
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </article>
+          <article className={ui.card}>
+            <h2>Reglas de proveedores</h2>
+            <p>
+              Lunes a viernes, 8:00 a 18:00. El atajo de Proveedor arma el pase
+              con ese corte y un solo uso.
+            </p>
+            <p className={ui.muted}>
+              Para un ingreso fuera de hora, usá Visita o Evento.
+            </p>
+          </article>
+        </section>
+      ) : null}
 
       <div className={ui.split}>
         <section className={ui.card}>
@@ -125,7 +189,7 @@ export default async function DashboardPage() {
                         {invitation.guest_name ?? "Esperando datos"}
                       </strong>
                       <p className={ui.muted}>
-                        {property ? lotLabel(property) : "Lot or house"} · hasta{" "}
+                        {property ? lotLabel(property) : "Lote"} · hasta{" "}
                         {formatDateTime(invitation.valid_to)}
                       </p>
                     </div>
@@ -138,7 +202,7 @@ export default async function DashboardPage() {
         </section>
 
         <section className={ui.card}>
-          <h2>Últimos movimientos</h2>
+          <h2>{admin ? "Libro de guardia" : "Últimos movimientos"}</h2>
           {(logs ?? []).length === 0 ? (
             <Empty
               title="Sin movimientos"
