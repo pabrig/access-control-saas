@@ -1,13 +1,29 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f3efe6;
+  --bg-tint: #e7efe9;
+  --surface: #fffcf7;
+  --ink: #1c1915;
+  --muted: #5f584e;
+  --line: #e2dacd;
+  --brand: #0c5c4c;
+  --brand-hover: #0a4c3f;
+  --brand-soft: #dff0ea;
+  --ok: #276749;
+  --ok-soft: #e7f5ec;
+  --warn: #8a5a10;
+  --warn-soft: #fff4d6;
+  --danger: #9b2c2c;
+  --danger-soft: #fdeaea;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow:
+    0 1px 2px rgba(28, 25, 21, 0.05), 0 10px 28px rgba(28, 25, 21, 0.06);
+  --font: var(--font-geist-sans), "Segoe UI", sans-serif;
+  --mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  height: 100%;
 }
 
 html,
@@ -17,8 +33,14 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  min-height: 100%;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 480px at 0% -10%, var(--bg-tint), transparent 55%),
+    var(--bg);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 * {
@@ -32,19 +54,14 @@ a {
   text-decoration: none;
 }
 
-.imgDark {
-  display: none;
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
+button {
+  cursor: pointer;
 }

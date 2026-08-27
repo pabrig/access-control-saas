@@ -5,11 +5,13 @@ import {
   shouldRevokeSingleUse,
 } from "./access-rules.js";
 import { nextAccessAction, type AccessStatus } from "./access-state.js";
+import { matchInvitationPlate, parsePlate } from "./plates.js";
 import { serviceClient } from "./supabase.js";
 
 const bodySchema = z.object({
   qrToken: z.string().uuid(),
   gateId: z.string().uuid(),
+  plate: z.string().max(12).optional(),
 });
 
 export type ValidateErrorCode =
@@ -21,7 +23,21 @@ export type ValidateErrorCode =
   | "NOT_YET_VALID"
   | "EXPIRED"
   | "WRONG_GATE"
-  | "INVALID_TRANSITION";
+  | "INVALID_TRANSITION"
+  | "INVALID_PLATE"
+  | "UNKNOWN_PLATE"
+  | "NOT_READY";
+
+export type InvitationVehicle = {
+  plateDisplay: string;
+  plateFormat: string;
+  color: string | null;
+  passengers: Array<{
+    fullName: string;
+    dni: string | null;
+    isDriver: boolean;
+  }>;
+};
 
 export type ValidateResult =
   | {
@@ -32,6 +48,8 @@ export type ValidateResult =
         guestName: string;
         propertyId: string;
       };
+      vehicles: InvitationVehicle[];
+      matchedPlate: string | null;
     }
   | { ok: false; code: ValidateErrorCode; message: string };
 
@@ -48,7 +66,7 @@ export async function validateAccess(
     };
   }
 
-  const { qrToken, gateId } = parsed.data;
+  const { qrToken, gateId, plate } = parsed.data;
 
   const { data: profile, error: profileError } = await serviceClient
     .from("profiles")
@@ -109,7 +127,7 @@ export async function validateAccess(
   const { data: invitation, error: invitationError } = await serviceClient
     .from("invitations")
     .select(
-      "id, guest_name, property_id, neighborhood_id, valid_from, valid_to, is_revoked, is_single_use",
+      "id, guest_name, property_id, neighborhood_id, valid_from, valid_to, is_revoked, is_single_use, status, qr_token",
     )
     .eq("qr_token", qrToken)
     .maybeSingle();
@@ -125,6 +143,71 @@ export async function validateAccess(
   if (invitation.is_revoked) {
     return { ok: false, code: "REVOKED", message: "Invitation was revoked" };
   }
+
+  if (invitation.status !== "READY" || !invitation.qr_token) {
+    return {
+      ok: false,
+      code: "NOT_READY",
+      message: "Guest has not completed this pass yet",
+    };
+  }
+
+  const { data: vehicleRows, error: vehiclesError } = await serviceClient
+    .from("invitation_vehicles")
+    .select(
+      "id, plate_normalized, plate_display, plate_format, color, invitation_passengers(full_name, dni, is_driver)",
+    )
+    .eq("invitation_id", invitation.id)
+    .order("created_at", { ascending: true });
+
+  if (vehiclesError) {
+    throw vehiclesError;
+  }
+
+  const plateDecision = matchInvitationPlate(
+    (vehicleRows ?? []).map((row) => ({
+      plateNormalized: row.plate_normalized,
+    })),
+    plate,
+  );
+
+  if (plateDecision === "invalid") {
+    return {
+      ok: false,
+      code: "INVALID_PLATE",
+      message: "Plate must be AAA 000 or AA000AA",
+    };
+  }
+
+  if (plateDecision === "unknown") {
+    return {
+      ok: false,
+      code: "UNKNOWN_PLATE",
+      message: "This plate is not on the invitation",
+    };
+  }
+
+  const matchedPlate =
+    plateDecision === "match"
+      ? (parsePlate(plate ?? "")?.display ?? null)
+      : null;
+  const matchedVehicleId =
+    plateDecision === "match" && plate
+      ? ((vehicleRows ?? []).find(
+          (row) => row.plate_normalized === parsePlate(plate)?.normalized,
+        )?.id ?? null)
+      : null;
+
+  const vehicles: InvitationVehicle[] = (vehicleRows ?? []).map((row) => ({
+    plateDisplay: row.plate_display,
+    plateFormat: row.plate_format,
+    color: row.color,
+    passengers: (row.invitation_passengers ?? []).map((passenger) => ({
+      fullName: passenger.full_name,
+      dni: passenger.dni,
+      isDriver: passenger.is_driver,
+    })),
+  }));
 
   const { data: gate, error: gateError } = await serviceClient
     .from("gates")
@@ -216,6 +299,7 @@ export async function validateAccess(
       gate_id: gateId,
       security_user_id: userId,
       action_type: actionType,
+      vehicle_id: matchedVehicleId,
     });
 
   if (insertError) {
@@ -238,8 +322,10 @@ export async function validateAccess(
     actionType,
     invitation: {
       id: invitation.id,
-      guestName: invitation.guest_name,
+      guestName: invitation.guest_name ?? "Visita",
       propertyId: invitation.property_id,
     },
+    vehicles,
+    matchedPlate,
   };
 }

@@ -195,4 +195,56 @@ begin
       false
     )
   on conflict (id) do nothing;
+
+  insert into public.invitation_vehicles (
+    id, invitation_id, plate_normalized, plate_display, plate_format, color
+  )
+  values
+    (
+      '10000000-0000-0000-0000-000000000061',
+      '10000000-0000-0000-0000-000000000041',
+      'ABC123',
+      'ABC 123',
+      'AR_OLD',
+      'Blanco'
+    ),
+    (
+      '10000000-0000-0000-0000-000000000062',
+      '10000000-0000-0000-0000-000000000041',
+      'AB123CD',
+      'AB 123 CD',
+      'AR_MERCOSUR',
+      'Gris'
+    )
+  on conflict (id) do nothing;
+
+  insert into public.invitation_passengers (
+    id, invitation_id, vehicle_id, full_name, dni, is_driver
+  )
+  values
+    (
+      '10000000-0000-0000-0000-000000000071',
+      '10000000-0000-0000-0000-000000000041',
+      '10000000-0000-0000-0000-000000000061',
+      'Invitado Lote 1',
+      '30111222',
+      true
+    ),
+    (
+      '10000000-0000-0000-0000-000000000072',
+      '10000000-0000-0000-0000-000000000041',
+      '10000000-0000-0000-0000-000000000061',
+      'Ana López',
+      '30111333',
+      false
+    ),
+    (
+      '10000000-0000-0000-0000-000000000073',
+      '10000000-0000-0000-0000-000000000041',
+      '10000000-0000-0000-0000-000000000062',
+      'Carlos Pérez',
+      '30999001',
+      true
+    )
+  on conflict (id) do nothing;
 end $$;

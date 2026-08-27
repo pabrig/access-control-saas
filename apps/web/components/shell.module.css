@@ -1,0 +1,154 @@
+.frame {
+  min-height: 100svh;
+  display: grid;
+}
+
+.body {
+  min-width: 0;
+}
+
+.sidebar {
+  display: none;
+}
+
+.brand,
+.brandMobile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  font-size: 1.2rem;
+}
+
+.mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  padding: 12px 16px 0;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.logout {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-weight: 650;
+}
+
+.mobileNav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 0;
+  scrollbar-width: none;
+  grid-column: 1 / -1;
+}
+
+.chip,
+.chipActive {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.chipActive {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.main {
+  padding: 24px 16px 64px;
+  max-width: 1080px;
+}
+
+@media (min-width: 900px) {
+  .frame {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding: 24px 18px;
+    border-right: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+    position: sticky;
+    top: 0;
+    height: 100svh;
+  }
+
+  .top {
+    display: none;
+  }
+
+  .main {
+    padding: 36px 40px 80px;
+  }
+
+  .nav {
+    display: grid;
+    gap: 4px;
+  }
+
+  .navLink,
+  .navActive {
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+
+  .navActive {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  .user {
+    margin-top: auto;
+    display: grid;
+    gap: 12px;
+    font-size: 14px;
+  }
+
+  .user p {
+    display: grid;
+    gap: 2px;
+  }
+
+  .user span {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .user button {
+    width: 100%;
+    min-height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+}

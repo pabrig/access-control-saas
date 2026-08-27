@@ -1,0 +1,53 @@
+.shell {
+  min-height: 100dvh;
+  padding: 20px 16px 40px;
+}
+
+.page {
+  width: min(100%, 440px);
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.page h1 {
+  font-size: 1.7rem;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.lead {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.qr {
+  margin: 0;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.qr figcaption {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.page :global(button),
+.page :global(input),
+.page :global(select) {
+  min-height: 44px;
+}
