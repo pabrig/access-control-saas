@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../login/actions";
 import styles from "./invitations.module.css";
 
+const ROLE_COPY: Record<string, string> = {
+  OWNER: "Property owner",
+};
+
 export default async function InvitationsPage() {
   const supabase = await createClient();
   const {
@@ -28,7 +32,9 @@ export default async function InvitationsPage() {
           <h1>Invitaciones</h1>
           <p className={styles.meta}>
             {user?.email} ·{" "}
-            {(roles ?? []).map((role) => role.role).join(", ") || "sin rol"}
+            {(roles ?? [])
+              .map((role) => ROLE_COPY[role.role] ?? role.role)
+              .join(", ") || "sin rol"}
           </p>
         </div>
         <form action={signOut}>
@@ -50,7 +56,7 @@ export default async function InvitationsPage() {
                 <div>
                   <strong>{invitation.guest_name}</strong>
                   <p>
-                    Lote {property?.lot_number ?? "—"}
+                    Lot or house {property?.lot_number ?? "—"}
                     {property?.street_name ? ` · ${property.street_name}` : ""}
                   </p>
                 </div>

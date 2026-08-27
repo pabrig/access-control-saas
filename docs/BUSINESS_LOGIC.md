@@ -6,7 +6,7 @@
 - **COMPLEX_ADMIN:** Management restricted to `complex_id` and transitively to child `neighborhood_ids`.
 - **NEIGHBORHOOD_ADMIN:** Management restricted exclusively to a `neighborhood_id`.
 - **SECURITY:** Read/Validation access restricted to the `gate_id` assigned to their shift.
-- **OWNER:** Creation/Read permissions for invitations strictly limited to their `property_id`.
+- **OWNER:** May update (not create or delete) their own `property`. Full CRUD on invitations strictly limited to their `property_id`. Cannot move the lot to another neighborhood.
 
 ## 2. QR Generation and Validation Flow
 
