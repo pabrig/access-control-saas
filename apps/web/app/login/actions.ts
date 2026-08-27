@@ -14,7 +14,7 @@ export async function signIn(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/invitations");
+  redirect("/");
 }
 
 export async function signOut() {

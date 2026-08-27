@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 function fail(message: string): never {
-  redirect(`/invitations?error=${encodeURIComponent(message)}`);
+  redirect(`/pases?error=${encodeURIComponent(message)}`);
 }
 
 export async function createInvitation(formData: FormData) {
@@ -25,7 +25,7 @@ export async function createInvitation(formData: FormData) {
   const isSingleUse = formData.get("is_single_use") === "on";
 
   if (!guestName || !propertyId || !validFromRaw || !validToRaw) {
-    fail("Completá nombre, lote y ventana de validez.");
+    fail("Completá nombre, lote y hasta cuándo vale el pase.");
   }
 
   const validFrom = new Date(validFromRaw);
@@ -36,7 +36,7 @@ export async function createInvitation(formData: FormData) {
   }
 
   if (!(validTo > validFrom)) {
-    fail("La fecha hasta debe ser posterior al desde.");
+    fail("La fecha hasta tiene que ser después de la de inicio.");
   }
 
   const { data: property, error: propertyError } = await supabase
@@ -46,7 +46,7 @@ export async function createInvitation(formData: FormData) {
     .maybeSingle();
 
   if (propertyError || !property) {
-    fail("No podés crear invitaciones para ese lote.");
+    fail("No podés crear un pase para ese lote.");
   }
 
   const { error } = await supabase.from("invitations").insert({
@@ -64,14 +64,14 @@ export async function createInvitation(formData: FormData) {
     fail(error.message);
   }
 
-  redirect("/invitations?created=1");
+  redirect("/pases?created=1");
 }
 
 export async function revokeInvitation(formData: FormData) {
   const id = String(formData.get("id") ?? "");
 
   if (!id) {
-    fail("Invitación inválida.");
+    fail("Pase inválido.");
   }
 
   const supabase = await createClient();
@@ -84,5 +84,5 @@ export async function revokeInvitation(formData: FormData) {
     fail(error.message);
   }
 
-  redirect("/invitations");
+  redirect("/pases");
 }
