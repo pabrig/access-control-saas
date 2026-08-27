@@ -146,11 +146,11 @@ export default async function MovimientosPage({
           rows={rows}
           searchPlaceholder="Filtrar por invitado, barrera o guardia"
           columns={[
-            { key: "when", header: "Cuando", value: (row) => row.when },
-            { key: "guest", header: "Invitado", value: (row) => row.guest },
-            { key: "action", header: "Movimiento", value: (row) => row.action },
-            { key: "gate", header: "Barrera", value: (row) => row.gate },
-            { key: "guard", header: "Guardia", value: (row) => row.guard },
+            { key: "when", header: "Cuando" },
+            { key: "guest", header: "Invitado" },
+            { key: "action", header: "Movimiento" },
+            { key: "gate", header: "Barrera" },
+            { key: "guard", header: "Guardia" },
           ]}
         />
       )}
