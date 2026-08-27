@@ -142,7 +142,7 @@ export function BookingCalendar({
       </div>
 
       <label>
-        Invitados (uno por línea)
+        Quiénes vienen (uno por línea, opcional)
         <textarea
           name="guests"
           rows={4}
@@ -150,7 +150,7 @@ export function BookingCalendar({
         />
       </label>
       <button className={ui.button} type="submit">
-        Reservar {amenity.name} e invitar
+        Crear evento en {amenity.name}
       </button>
     </form>
   );

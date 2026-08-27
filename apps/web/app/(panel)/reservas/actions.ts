@@ -31,7 +31,7 @@ export async function createAmenityBooking(formData: FormData) {
   const startsAt = new Date(startRaw);
 
   if (!propertyId || Number.isNaN(startsAt.getTime())) {
-    fail("Elegí el amenity y un horario.");
+    fail("Elegí el espacio y un horario.");
   }
 
   const endsAt = new Date(startsAt.getTime() + amenity.hours * 60 * 60 * 1000);
@@ -42,7 +42,7 @@ export async function createAmenityBooking(formData: FormData) {
     .maybeSingle();
 
   if (propertyError || !property) {
-    fail("No podés reservar con ese lote.");
+    fail("No podés crear el evento con ese lote.");
   }
 
   const label = bookingLabel(amenity.name);
@@ -59,7 +59,7 @@ export async function createAmenityBooking(formData: FormData) {
   });
 
   if (overlap) {
-    fail("Ese horario del amenity ya está tomado.");
+    fail("Ese horario ya está tomado.");
   }
 
   const { error: bookingError } = await supabase.from("invitations").insert({

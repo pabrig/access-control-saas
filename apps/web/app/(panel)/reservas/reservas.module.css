@@ -20,7 +20,7 @@
   min-height: 48px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--input);
   cursor: pointer;
 }
 
@@ -95,5 +95,6 @@
   padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
+  background: var(--input);
   font: inherit;
 }

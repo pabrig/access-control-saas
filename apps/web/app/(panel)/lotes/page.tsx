@@ -111,7 +111,7 @@ export default async function LotesPage({
             ? "Un lote siempre está dentro de un barrio. Si el barrio no está, sumalo en el mismo formulario y después cargá el lote."
             : admin
               ? "Los pases siempre van a un lote. Acá cargás o corregís la calle y el número."
-              : "Este es el lote desde el que invitás visitas."
+              : "Este es el lote desde el que invitás a entrar."
         }
       />
 

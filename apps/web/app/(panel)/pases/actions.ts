@@ -3,8 +3,25 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-function fail(message: string): never {
-  redirect(`/pases?error=${encodeURIComponent(message)}`);
+function destination(next: string) {
+  const path = next.split("?")[0] ?? next;
+  if (path.startsWith("/reservas")) {
+    return "/reservas";
+  }
+
+  if (path.startsWith("/movimientos")) {
+    return "/movimientos";
+  }
+
+  if (/^\/pases\/[0-9a-f-]{36}$/i.test(path)) {
+    return path;
+  }
+
+  return "/pases";
+}
+
+function fail(message: string, next = "/pases"): never {
+  redirect(`${destination(next)}?error=${encodeURIComponent(message)}`);
 }
 
 async function loadOwnedProperty(propertyId: string) {
@@ -16,7 +33,7 @@ async function loadOwnedProperty(propertyId: string) {
     .maybeSingle();
 
   if (error || !property) {
-    fail("No podés crear un pase para ese lote.");
+    fail("No podés crear una invitación para ese lote.");
   }
 
   return { supabase, property };
@@ -38,7 +55,7 @@ export async function createShareInvite(formData: FormData) {
   const isSingleUse = formData.get("is_single_use") === "on";
 
   if (!propertyId || !validFromRaw || !validToRaw) {
-    fail("Completá hasta cuándo vale la visita.");
+    fail("Completá hasta cuándo vale la invitación.");
   }
 
   const validFrom = new Date(validFromRaw);
@@ -89,7 +106,7 @@ export async function createDoorInvite(formData: FormData) {
   const isSingleUse = formData.get("is_single_use") === "on";
 
   if (!guestName || !propertyId || !validFromRaw || !validToRaw) {
-    fail("Para un pase en puerta hace falta el nombre y hasta cuándo vale.");
+    fail("Para generar el QR acá hace falta el nombre y hasta cuándo vale.");
   }
 
   const validFrom = new Date(validFromRaw);
@@ -125,9 +142,10 @@ export async function createDoorInvite(formData: FormData) {
 
 export async function revokeInvitation(formData: FormData) {
   const id = String(formData.get("id") ?? "");
+  const next = String(formData.get("next") ?? "/pases");
 
   if (!id) {
-    fail("Pase inválido.");
+    fail("Invitación inválida.", next);
   }
 
   const supabase = await createClient();
@@ -137,8 +155,56 @@ export async function revokeInvitation(formData: FormData) {
     .eq("id", id);
 
   if (error) {
-    fail(error.message);
+    fail(error.message, next);
   }
 
-  redirect("/pases");
+  redirect(destination(next));
+}
+
+export async function updateInvitation(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const next = String(formData.get("next") ?? "/pases");
+  const guestName = String(formData.get("guest_name") ?? "").trim();
+  const validFromRaw = String(formData.get("valid_from") ?? "");
+  const validToRaw = String(formData.get("valid_to") ?? "");
+
+  if (!id || !validFromRaw || !validToRaw) {
+    fail("Completá las fechas de la invitación.", next);
+  }
+
+  const validFrom = new Date(validFromRaw);
+  const validTo = new Date(validToRaw);
+
+  if (Number.isNaN(validFrom.getTime()) || Number.isNaN(validTo.getTime())) {
+    fail("Las fechas no son válidas.", next);
+  }
+
+  if (!(validTo > validFrom)) {
+    fail("La fecha hasta tiene que ser después de la de inicio.", next);
+  }
+
+  const supabase = await createClient();
+  const patch: {
+    valid_from: string;
+    valid_to: string;
+    guest_name?: string;
+  } = {
+    valid_from: validFrom.toISOString(),
+    valid_to: validTo.toISOString(),
+  };
+
+  if (guestName) {
+    patch.guest_name = guestName;
+  }
+
+  const { error } = await supabase
+    .from("invitations")
+    .update(patch)
+    .eq("id", id);
+
+  if (error) {
+    fail(error.message, next);
+  }
+
+  redirect(`${destination(next)}?updated=1`);
 }

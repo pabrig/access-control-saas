@@ -13,9 +13,9 @@ export default async function PanelLayout({
   const nav = resident
     ? [
         { href: "/", label: "Inicio" },
-        { href: "/pases", label: "Pases" },
-        { href: "/reservas", label: "Amenities" },
-        { href: "/movimientos", label: "Actividad" },
+        { href: "/pases", label: "Invitados" },
+        { href: "/reservas", label: "Eventos" },
+        { href: "/movimientos", label: "Historial" },
         { href: "/lotes", label: "Mi lote" },
       ]
     : [
