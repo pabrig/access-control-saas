@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { Banner } from "@/components/ui";
@@ -6,6 +5,7 @@ import ui from "@/components/ui.module.css";
 import { formatDateTime, lotLabel } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { VehicleFields } from "@/app/(panel)/pases/vehicle-fields";
+import { CredentialPass } from "../credential-pass";
 import { claimInvite } from "./actions";
 import styles from "../invite.module.css";
 
@@ -42,45 +42,57 @@ export default async function GuestInvitePage({
   const ready = invite.status === "READY" && Boolean(invite.qr_token);
   const qrDataUrl =
     ready && invite.qr_token
-      ? await QRCode.toDataURL(invite.qr_token, { margin: 1, width: 240 })
+      ? await QRCode.toDataURL(invite.qr_token, {
+          margin: 1,
+          width: 280,
+          color: { dark: "#0b1220", light: "#ffffff" },
+        })
       : null;
+
+  const neighborhoodName = invite.neighborhood_name || "Barrio";
+  const lot = lotLabel({
+    lot_number: invite.lot_number,
+    street_name: invite.street_name,
+  });
+
+  if (invite.is_revoked || expired) {
+    return (
+      <main className={styles.page}>
+        <p className={styles.kicker}>{neighborhoodName}</p>
+        <h1>{invite.is_revoked ? "Invitación revocada" : "Pase vencido"}</h1>
+        <p className={styles.lead}>{lot}</p>
+      </main>
+    );
+  }
+
+  if (ready && qrDataUrl) {
+    return (
+      <main className={styles.page}>
+        <CredentialPass
+          guestName={invite.guest_name ?? "Visita"}
+          lotNumber={invite.lot_number}
+          neighborhoodName={neighborhoodName}
+          qrDataUrl={qrDataUrl}
+          streetName={invite.street_name}
+          validLabel={`${formatDateTime(invite.valid_from)} → ${formatDateTime(invite.valid_to)}`}
+        />
+      </main>
+    );
+  }
 
   return (
     <main className={styles.page}>
-      <p className={styles.kicker}>Invitación</p>
-      <h1>{ready ? "Tu pase" : "Completá tus datos"}</h1>
+      <p className={styles.kicker}>{neighborhoodName}</p>
+      <h1>Completá tus datos</h1>
       <p className={styles.lead}>
-        {lotLabel({
-          lot_number: invite.lot_number,
-          street_name: invite.street_name,
-        })}
+        {lot}
         <br />
         {formatDateTime(invite.valid_from)} → {formatDateTime(invite.valid_to)}
       </p>
 
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
-      {flash.listo ? (
-        <Banner>Listo. Mostrá este QR en la barrera.</Banner>
-      ) : null}
 
-      {invite.is_revoked ? (
-        <p className={ui.muted}>Esta invitación fue revocada.</p>
-      ) : expired ? (
-        <p className={ui.muted}>Esta invitación ya venció.</p>
-      ) : ready && qrDataUrl ? (
-        <figure className={styles.qr}>
-          <Image
-            alt="QR de acceso"
-            height={240}
-            src={qrDataUrl}
-            unoptimized
-            width={240}
-          />
-          <figcaption>
-            {invite.guest_name}. Dejá el brillo alto y mostralo en la barrera.
-          </figcaption>
-        </figure>
-      ) : (
+      <section className={styles.claim}>
         <form action={claimInvite} className={ui.form}>
           <input type="hidden" name="share_token" value={token} />
           <label>
@@ -101,7 +113,7 @@ export default async function GuestInvitePage({
             Generar mi QR
           </button>
         </form>
-      )}
+      </section>
     </main>
   );
 }

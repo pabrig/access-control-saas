@@ -1,6 +1,8 @@
 .shell {
   min-height: 100dvh;
-  padding: 20px 16px 40px;
+  padding: 16px 16px 32px;
+  background: #0b1220;
+  color: #f7f4ee;
 }
 
 .page {
@@ -12,42 +14,111 @@
 
 .kicker {
   font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: #b7c0ce;
 }
 
-.page h1 {
-  font-size: 1.7rem;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+.page h1,
+.credential h1 {
+  font-size: clamp(1.7rem, 6vw, 2.1rem);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
 }
 
 .lead {
-  color: var(--muted);
+  color: #c5cdd8;
   font-size: 15px;
+}
+
+.credential {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+
+.place {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7dd3c0;
 }
 
 .qr {
   margin: 0;
-  padding: 16px;
+  width: 100%;
+  padding: 18px 16px 14px;
   background: #fff;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  color: #1c1915;
+  border-radius: 24px;
   display: grid;
   justify-items: center;
   gap: 10px;
 }
 
 .qr figcaption {
-  font-size: 14px;
-  color: var(--muted);
+  font-size: 13px;
+  color: #5f584e;
   text-align: center;
+  max-width: 28ch;
 }
 
-.page :global(button),
+.actions {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.primary,
+.secondary,
+.wallet,
+.page :global(button) {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+.primary {
+  background: #0c5c4c;
+  color: #fff;
+}
+
+.secondary,
+.wallet {
+  background: transparent;
+  color: #f7f4ee;
+  border: 1px solid #314056;
+}
+
+.walletHint {
+  font-size: 12px;
+  color: #9aa6b8;
+  max-width: 36ch;
+}
+
+.claim {
+  background: #fffcf7;
+  color: #1c1915;
+  padding: 20px;
+  border-radius: 20px;
+}
+
 .page :global(input),
 .page :global(select) {
   min-height: 44px;
+}
+
+:global(html[data-pass="ready"]) {
+  background: #0b1220;
+}
+
+:global(html[data-pass="ready"] body) {
+  background: #0b1220;
 }

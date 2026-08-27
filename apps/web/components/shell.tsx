@@ -15,18 +15,36 @@ export function AppShell({
   email,
   role,
   nav,
+  variant = "ops",
   children,
 }: {
   firstName: string;
   email: string;
   role: Role | null;
   nav: NavItem[];
+  variant?: "resident" | "ops";
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const tabs =
+    variant === "resident"
+      ? nav.filter((item) => ["/", "/pases", "/reservas"].includes(item.href))
+      : nav;
+
+  function isActive(href: string) {
+    return href === "/"
+      ? pathname === "/"
+      : pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   return (
-    <div className={styles.frame}>
+    <div
+      className={
+        variant === "resident"
+          ? `${styles.frame} ${styles.resident}`
+          : styles.frame
+      }
+    >
       <aside className={styles.sidebar}>
         <Link className={styles.brand} href="/">
           <span className={styles.mark} aria-hidden>
@@ -35,23 +53,17 @@ export function AppShell({
           Acceso
         </Link>
         <nav className={styles.nav} aria-label="Principal">
-          {nav.map((item) => {
-            const active =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname === item.href ||
-                  pathname.startsWith(`${item.href}/`);
-
-            return (
-              <Link
-                key={item.href}
-                className={active ? styles.navActive : styles.navLink}
-                href={item.href}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              className={
+                isActive(item.href) ? styles.navActive : styles.navLink
+              }
+              href={item.href}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
         <div className={styles.user}>
           <p>
@@ -74,27 +86,36 @@ export function AppShell({
               Salir
             </button>
           </form>
-          <nav className={styles.mobileNav} aria-label="Secciones">
-            {nav.map((item) => (
+          {variant === "ops" ? (
+            <nav className={styles.mobileNav} aria-label="Secciones">
+              {nav.map((item) => (
+                <Link
+                  key={item.href}
+                  className={
+                    isActive(item.href) ? styles.chipActive : styles.chip
+                  }
+                  href={item.href}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+        </header>
+        <main className={styles.main}>{children}</main>
+        {variant === "resident" ? (
+          <nav className={styles.tabBar} aria-label="Acciones frecuentes">
+            {tabs.map((item) => (
               <Link
                 key={item.href}
-                className={
-                  (
-                    item.href === "/"
-                      ? pathname === "/"
-                      : pathname.startsWith(item.href)
-                  )
-                    ? styles.chipActive
-                    : styles.chip
-                }
+                className={isActive(item.href) ? styles.tabActive : styles.tab}
                 href={item.href}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
-        </header>
-        <main className={styles.main}>{children}</main>
+        ) : null}
       </div>
     </div>
   );

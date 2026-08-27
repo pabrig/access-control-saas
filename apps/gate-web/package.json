@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "env -u DYLD_INSERT_LIBRARIES next dev --port 3002",
+    "dev": "env -u DYLD_INSERT_LIBRARIES next dev --port 3002 --hostname 0.0.0.0",
+    "dev:https": "env -u DYLD_INSERT_LIBRARIES next dev --port 3002 --hostname 0.0.0.0 --experimental-https",
     "build": "next build",
     "start": "env -u DYLD_INSERT_LIBRARIES next start --port 3002",
     "lint": "eslint --max-warnings 0",
@@ -14,6 +15,7 @@
     "@repo/db": "workspace:*",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
+    "jsqr": "^1.4.0",
     "next": "16.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

@@ -4,7 +4,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   SUPERADMIN: "Superadmin",
   COMPLEX_ADMIN: "Admin del complejo",
   NEIGHBORHOOD_ADMIN: "Admin del barrio",
-  OWNER: "Property owner",
+  OWNER: "Residente",
   SECURITY: "Seguridad",
 };
 

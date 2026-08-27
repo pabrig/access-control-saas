@@ -1,8 +1,8 @@
 :root {
-  --background: #0a0a0a;
-  --foreground: #f5f5f5;
-  --accent: #ecfdf3;
-  --danger: #fef3f2;
+  --background: #07090b;
+  --foreground: #f4f7fa;
+  --ok: #16a34a;
+  --danger: #b91c1c;
 }
 
 html,
@@ -25,4 +25,10 @@ body {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
 }

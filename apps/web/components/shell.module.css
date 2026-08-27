@@ -85,6 +85,10 @@
   max-width: 1080px;
 }
 
+.tabBar {
+  display: none;
+}
+
 @media (min-width: 900px) {
   .frame {
     grid-template-columns: 240px minmax(0, 1fr);
@@ -150,5 +154,45 @@
     border-radius: 10px;
     border: 1px solid var(--line);
     background: var(--surface);
+  }
+}
+
+@media (max-width: 899px) {
+  .resident .main {
+    padding-bottom: 96px;
+  }
+
+  .resident .mobileNav {
+    display: none;
+  }
+
+  .tabBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 6;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+  }
+
+  .tab,
+  .tabActive {
+    min-height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .tabActive {
+    background: var(--brand-soft);
+    color: var(--brand);
   }
 }

@@ -112,6 +112,41 @@
   color: var(--brand);
 }
 
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.kind,
+.kindActive {
+  min-height: 64px;
+  padding: 10px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kind strong,
+.kindActive strong {
+  font-size: 14px;
+}
+
+.kind span,
+.kindActive span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.kindActive {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
 .waitingQr {
   margin: 0;
   padding: 16px;
