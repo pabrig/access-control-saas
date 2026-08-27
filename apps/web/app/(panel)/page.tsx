@@ -121,7 +121,9 @@ export default async function DashboardPage() {
                 return (
                   <li className={ui.row} key={invitation.id}>
                     <div>
-                      <strong>{invitation.guest_name ?? "Esperando datos"}</strong>
+                      <strong>
+                        {invitation.guest_name ?? "Esperando datos"}
+                      </strong>
                       <p className={ui.muted}>
                         {property ? lotLabel(property) : "Lot or house"} · hasta{" "}
                         {formatDateTime(invitation.valid_to)}
