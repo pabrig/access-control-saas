@@ -28,6 +28,11 @@ export function eventSpaceName(name: string | null | undefined) {
   return name.replace(/^Reserva · /, "");
 }
 
+export function bookingSentence(residentName: string, space: string) {
+  const article = space === "SUM" ? "el " : "";
+  return `${residentName} reservó ${article}${space}`;
+}
+
 export function monthMatrix(year: number, month: number) {
   const first = new Date(year, month, 1);
   const start = new Date(first);

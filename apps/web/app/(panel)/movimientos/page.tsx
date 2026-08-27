@@ -3,6 +3,7 @@ import { DataTable } from "@/components/data-table";
 import { Banner, Empty, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
+import { eventSpaceName, isBookingLabel } from "@/lib/amenities";
 import {
   formatDateTime,
   formatDayHeading,
@@ -15,7 +16,7 @@ import {
   isExitAction,
 } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
-import { isAdmin, isOwner, requireSession } from "@/lib/session";
+import { isAdmin, isNeighborhoodAdmin, isOwner, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function MovimientosPage({
@@ -25,7 +26,8 @@ export default async function MovimientosPage({
 }) {
   const flash = await searchParams;
   const session = await requireSession();
-  const resident = isOwner(session) && !isAdmin(session);
+  const feedView =
+    (isOwner(session) && !isAdmin(session)) || isNeighborhoodAdmin(session);
   const supabase = await createClient();
   const { data: logs } = await supabase
     .from("access_logs")
@@ -35,7 +37,7 @@ export default async function MovimientosPage({
     .order("timestamp", { ascending: false })
     .limit(200);
 
-  if (resident) {
+  if (feedView) {
     const days: Array<{ heading: string; items: NonNullable<typeof logs> }> =
       [];
 
@@ -51,7 +53,9 @@ export default async function MovimientosPage({
 
     return (
       <>
-        <PageHeader title="Historial" />
+        <PageHeader
+          title={isNeighborhoodAdmin(session) ? "Movimientos" : "Historial"}
+        />
         {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
         {flash.updated ? <Banner>Guardado.</Banner> : null}
         {days.length === 0 ? (
@@ -75,7 +79,11 @@ export default async function MovimientosPage({
                         <Icon name={exited ? "exit" : "enter"} size={18} />
                       </span>
                       <span className={ui.feedBody}>
-                        <strong>{invitation?.guest_name ?? "Invitado"}</strong>
+                        <strong>
+                          {isBookingLabel(invitation?.guest_name)
+                            ? eventSpaceName(invitation?.guest_name)
+                            : (invitation?.guest_name ?? "Invitado")}
+                        </strong>
                         <span className={ui.feedMeta}>
                           {accessActionShort(log.action_type)}
                         </span>

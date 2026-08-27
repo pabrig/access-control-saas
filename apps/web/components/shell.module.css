@@ -1,10 +1,14 @@
 .frame {
-  min-height: 100svh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
 }
 
 .body {
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar {
@@ -91,7 +95,10 @@
 
 .main {
   padding: 24px 16px 64px;
+  width: 100%;
   max-width: 1080px;
+  min-width: 0;
+  flex: 1;
 }
 
 .tabBar {
@@ -101,6 +108,12 @@
 @media (min-width: 900px) {
   .frame {
     grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 
   .sidebar {
@@ -110,22 +123,35 @@
     padding: 24px 18px;
     border-right: 1px solid var(--line);
     background: color-mix(in srgb, var(--surface) 70%, transparent);
-    position: sticky;
-    top: 0;
-    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .brand {
+    flex-shrink: 0;
   }
 
   .top {
     display: none;
   }
 
+  .body {
+    min-height: 0;
+    overflow: auto;
+  }
+
   .main {
-    padding: 36px 40px 80px;
+    padding: 36px 40px 48px;
+    max-width: none;
   }
 
   .nav {
     display: grid;
+    align-content: start;
     gap: 4px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
   }
 
   .navLink,
@@ -145,6 +171,7 @@
 
   .user {
     margin-top: auto;
+    flex-shrink: 0;
     display: grid;
     gap: 12px;
     font-size: 14px;

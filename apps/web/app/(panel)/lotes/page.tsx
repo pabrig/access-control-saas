@@ -1,10 +1,28 @@
 import { Banner, Empty, PageHeader } from "@/components/ui";
 import ui from "@/components/ui.module.css";
-import { lotLabel } from "@/lib/format";
+import { lotLabel, personName } from "@/lib/format";
 import { asOne } from "@/lib/relations";
-import { canCreateNeighborhood, isAdmin, requireSession } from "@/lib/session";
+import {
+  assignedNeighborhoodId,
+  canCreateNeighborhood,
+  isAdmin,
+  isNeighborhoodAdmin,
+  requireSession,
+} from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { createNeighborhood, createProperty, updateProperty } from "./actions";
+import {
+  createNeighborhood,
+  createProperty,
+  updateProperty,
+} from "./actions";
+
+type LotFieldsValue = {
+  lot_number?: string;
+  street_name?: string | null;
+  block_name?: string | null;
+  phone?: string | null;
+  notes?: string | null;
+};
 
 function AddBarrioForm({
   complexIds,
@@ -51,14 +69,77 @@ function AddBarrioForm({
   );
 }
 
+function LotFields({ value }: { value?: LotFieldsValue }) {
+  return (
+    <>
+      <div className={ui.formRow}>
+        <label>
+          Número de lote
+          <input
+            name="lot_number"
+            required
+            maxLength={20}
+            defaultValue={value?.lot_number}
+          />
+        </label>
+        <label>
+          Manzana
+          <input
+            name="block_name"
+            maxLength={20}
+            placeholder="Ej. A"
+            defaultValue={value?.block_name ?? ""}
+          />
+        </label>
+      </div>
+      <div className={ui.formRow}>
+        <label>
+          Calle
+          <input
+            name="street_name"
+            maxLength={80}
+            defaultValue={value?.street_name ?? ""}
+          />
+        </label>
+        <label>
+          Teléfono
+          <input
+            name="phone"
+            maxLength={30}
+            inputMode="tel"
+            placeholder="11 5555-0100"
+            defaultValue={value?.phone ?? ""}
+          />
+        </label>
+      </div>
+      <label>
+        Notas
+        <textarea
+          name="notes"
+          maxLength={280}
+          rows={2}
+          placeholder="Titular, inquilino, obras…"
+          defaultValue={value?.notes ?? ""}
+        />
+      </label>
+    </>
+  );
+}
+
 export default async function LotesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string; barrio?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    created?: string;
+    barrio?: string;
+  }>;
 }) {
   const flash = await searchParams;
   const session = await requireSession();
   const admin = isAdmin(session);
+  const barrio = isNeighborhoodAdmin(session);
+  const assignedBarrioId = assignedNeighborhoodId(session);
   const createBarrio = canCreateNeighborhood(session);
   const managedComplexIds = session.roles
     .filter((row) => row.role === "COMPLEX_ADMIN" && row.complex_id)
@@ -69,18 +150,54 @@ export default async function LotesPage({
     { data: properties, error },
     { data: neighborhoods },
     { data: complexes },
+    { data: ownerRoles },
+    { data: profiles },
   ] = await Promise.all([
     supabase
       .from("properties")
       .select(
-        "id, lot_number, street_name, neighborhood_id, neighborhoods(name)",
+        "id, lot_number, street_name, neighborhood_id, block_name, phone, notes, neighborhoods(name)",
       )
       .order("lot_number"),
     supabase.from("neighborhoods").select("id, name, complex_id").order("name"),
     createBarrio
       ? supabase.from("complexes").select("id, name").order("name")
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    admin
+      ? supabase
+          .from("user_roles")
+          .select("id, user_id, property_id, role")
+          .eq("role", "OWNER")
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            user_id: string;
+            property_id: string | null;
+            role: string;
+          }[],
+        }),
+    admin
+      ? supabase.from("profiles").select("id, first_name, last_name")
+      : Promise.resolve({
+          data: [] as { id: string; first_name: string; last_name: string }[],
+        }),
   ]);
+
+  const people = (profiles ?? []).map((profile) => ({
+    ...profile,
+    label: personName(profile),
+  }));
+  const residentsByLot = new Map<string, string[]>();
+
+  for (const row of ownerRoles ?? []) {
+    if (row.role !== "OWNER" || !row.property_id) {
+      continue;
+    }
+    const person = people.find((item) => item.id === row.user_id);
+    const current = residentsByLot.get(row.property_id) ?? [];
+    current.push(person?.label || "Residente");
+    residentsByLot.set(row.property_id, current);
+  }
 
   const lotsByBarrio = new Map<
     string,
@@ -109,9 +226,11 @@ export default async function LotesPage({
         description={
           createBarrio
             ? "Un lote siempre está dentro de un barrio. Si el barrio no está, sumalo en el mismo formulario y después cargá el lote."
-            : admin
-              ? "Los pases siempre van a un lote. Acá cargás o corregís la calle y el número."
-              : "Este es el lote desde el que invitás a entrar."
+            : barrio
+              ? "Padrón de tu barrio: manzana, contacto y notas de administración."
+              : admin
+                ? "Los pases siempre van a un lote. Acá cargás o corregís la ficha."
+                : "Este es el lote desde el que invitás a entrar."
         }
       />
 
@@ -122,6 +241,7 @@ export default async function LotesPage({
       ) : null}
       {error ? <Banner tone="danger">{error.message}</Banner> : null}
 
+      <div className={admin ? ui.deskSplit : undefined}>
       {admin ? (
         <section className={ui.card}>
           <h2>Nuevo lote</h2>
@@ -144,29 +264,28 @@ export default async function LotesPage({
             )
           ) : (
             <form action={createProperty} className={ui.form}>
-              <label>
-                Barrio del lote
-                <select name="neighborhood_id" required defaultValue="">
-                  <option value="" disabled>
-                    Elegí el barrio
-                  </option>
-                  {(neighborhoods ?? []).map((neighborhood) => (
-                    <option key={neighborhood.id} value={neighborhood.id}>
-                      {neighborhood.name}
+              {barrio && assignedBarrioId ? (
+                <input
+                  type="hidden"
+                  name="neighborhood_id"
+                  value={assignedBarrioId}
+                />
+              ) : (
+                <label>
+                  Barrio del lote
+                  <select name="neighborhood_id" required defaultValue="">
+                    <option value="" disabled>
+                      Elegí el barrio
                     </option>
-                  ))}
-                </select>
-              </label>
-              <div className={ui.formRow}>
-                <label>
-                  Número de lote
-                  <input name="lot_number" required maxLength={20} />
+                    {(neighborhoods ?? []).map((neighborhood) => (
+                      <option key={neighborhood.id} value={neighborhood.id}>
+                        {neighborhood.name}
+                      </option>
+                    ))}
+                  </select>
                 </label>
-                <label>
-                  Calle
-                  <input name="street_name" maxLength={80} />
-                </label>
-              </div>
+              )}
+              <LotFields />
               <button className={ui.button} type="submit">
                 Guardar lote
               </button>
@@ -194,50 +313,67 @@ export default async function LotesPage({
           description="El administrador carga el lote y te lo asigna como propietario."
         />
       ) : (
-        <div style={{ marginTop: 8 }}>
+        <div>
           {[...lotsByBarrio.entries()].map(([neighborhoodId, group]) => (
             <section key={neighborhoodId}>
-              <h2 className={ui.groupTitle}>{group.name}</h2>
+              {barrio ? null : (
+                <h2 className={ui.groupTitle}>{group.name}</h2>
+              )}
               <ul className={ui.list}>
-                {group.properties.map((property) => (
-                  <li className={ui.card} key={property.id}>
-                    {admin ? (
-                      <form action={updateProperty} className={ui.form}>
-                        <input type="hidden" name="id" value={property.id} />
-                        <div className={ui.formRow}>
-                          <label>
-                            Número
-                            <input
-                              defaultValue={property.lot_number}
-                              name="lot_number"
-                              required
-                            />
-                          </label>
-                          <label>
-                            Calle
-                            <input
-                              defaultValue={property.street_name ?? ""}
-                              name="street_name"
-                            />
-                          </label>
-                        </div>
-                        <button className={ui.buttonSecondary} type="submit">
-                          Guardar cambios
-                        </button>
-                      </form>
-                    ) : (
+                {group.properties.map((property) => {
+                  const residents = residentsByLot.get(property.id) ?? [];
+
+                  return (
+                    <li className={ui.card} key={property.id}>
                       <div>
                         <h2>{lotLabel(property)}</h2>
-                        <p className={ui.muted}>{group.name}</p>
+                        <p className={ui.muted}>
+                          {[
+                            property.block_name
+                              ? `Manzana ${property.block_name}`
+                              : null,
+                            admin ? null : group.name,
+                            residents.length > 0
+                              ? residents.join(", ")
+                              : admin
+                                ? "Sin residente"
+                                : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                        {property.phone ? (
+                          <p className={ui.muted}>{property.phone}</p>
+                        ) : null}
+                        {property.notes ? (
+                          <p className={ui.muted}>{property.notes}</p>
+                        ) : null}
                       </div>
-                    )}
-                  </li>
-                ))}
+                      {admin ? (
+                        <details>
+                          <summary>Editar lote</summary>
+                          <form action={updateProperty} className={ui.form}>
+                            <input
+                              type="hidden"
+                              name="id"
+                              value={property.id}
+                            />
+                            <LotFields value={property} />
+                            <button className={ui.button} type="submit">
+                              Guardar
+                            </button>
+                          </form>
+                        </details>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           ))}
         </div>
       )}
+      </div>
     </>
   );
 }

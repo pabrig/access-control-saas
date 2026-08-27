@@ -1,8 +1,8 @@
 import { Banner, Empty, PageHeader } from "@/components/ui";
 import ui from "@/components/ui.module.css";
-import { lotLabel, personName } from "@/lib/format";
+import { initials, lotLabel, personName } from "@/lib/format";
 import { ROLE_LABEL } from "@/lib/labels";
-import { isSuperadmin, requireAdmin } from "@/lib/session";
+import { isNeighborhoodAdmin, isSuperadmin, requireAdmin } from "@/lib/session";
 import type { Role } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { assignRole, removeRole } from "./actions";
@@ -15,6 +15,7 @@ export default async function PersonasPage({
   const flash = await searchParams;
   const session = await requireAdmin();
   const superadmin = isSuperadmin(session);
+  const barrio = isNeighborhoodAdmin(session);
   const supabase = await createClient();
 
   const [
@@ -52,7 +53,11 @@ export default async function PersonasPage({
       <PageHeader
         kicker="Comunidad"
         title="Personas"
-        description="Quién vive, quién administra y quién está de guardia, según lo que te deja ver tu rol. Las cuentas nuevas se crean en Supabase Auth."
+        description={
+          barrio
+            ? "Quién vive en tu barrio y en qué lote. Las cuentas nuevas se crean en Auth."
+            : "Quién vive, quién administra y quién está de guardia, según lo que te deja ver tu rol. Las cuentas nuevas se crean en Supabase Auth."
+        }
       />
 
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
@@ -139,13 +144,19 @@ export default async function PersonasPage({
         />
       ) : (
         <ul className={ui.stack} style={{ marginTop: 16 }}>
-          {people.map((person) => (
-            <li className={ui.card} key={person.id}>
-              <div>
-                <h2>{personName(person)}</h2>
-                <p className={ui.muted}>
-                  {person.is_active ? "Activa" : "Inactiva"}
-                </p>
+          {people.map((person) => {
+            return (
+              <li className={ui.card} key={person.id}>
+              <div className={ui.person}>
+                <span className={ui.avatar} aria-hidden>
+                  {initials(personName(person))}
+                </span>
+                <div>
+                  <h2>{personName(person)}</h2>
+                  <p className={ui.muted}>
+                    {person.is_active ? "Activa" : "Inactiva"}
+                  </p>
+                </div>
               </div>
               {person.roles.length === 0 ? (
                 <p className={ui.muted}>
@@ -186,7 +197,8 @@ export default async function PersonasPage({
                 </ul>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </>

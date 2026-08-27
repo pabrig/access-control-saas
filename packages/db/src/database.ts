@@ -339,24 +339,33 @@ export type Database = {
       };
       properties: {
         Row: {
+          block_name: string | null;
           created_at: string;
           id: string;
           lot_number: string;
           neighborhood_id: string;
+          notes: string | null;
+          phone: string | null;
           street_name: string | null;
         };
         Insert: {
+          block_name?: string | null;
           created_at?: string;
           id?: string;
           lot_number: string;
           neighborhood_id: string;
+          notes?: string | null;
+          phone?: string | null;
           street_name?: string | null;
         };
         Update: {
+          block_name?: string | null;
           created_at?: string;
           id?: string;
           lot_number?: string;
           neighborhood_id?: string;
+          notes?: string | null;
+          phone?: string | null;
           street_name?: string | null;
         };
         Relationships: [

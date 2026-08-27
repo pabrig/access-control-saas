@@ -180,6 +180,11 @@
   font-weight: 400;
 }
 
+.form textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
 .form input:focus,
 .form select:focus,
 .form textarea:focus {
@@ -238,7 +243,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  align-items: baseline;
+  align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
 }
@@ -246,6 +251,50 @@
 .row:last-child {
   border-bottom: 0;
   padding-bottom: 0;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pickList {
+  display: grid;
+  gap: 8px;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--brand) 30%, var(--line));
+  background: color-mix(in srgb, var(--brand-soft) 45%, var(--surface));
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick:hover {
+  border-style: solid;
+  border-color: var(--brand);
+}
+
+.pickLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.pickHint {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand);
 }
 
 .muted {
@@ -315,6 +364,29 @@
 .stack {
   display: grid;
   gap: 16px;
+}
+
+.deskSplit {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .deskSplit {
+    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    align-items: start;
+    gap: 28px;
+  }
+
+  .deskSplit > :first-child {
+    position: sticky;
+    top: 0;
+  }
+}
+
+.modules {
+  display: grid;
+  gap: 28px;
 }
 
 .split {

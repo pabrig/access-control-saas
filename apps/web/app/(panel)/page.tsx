@@ -16,7 +16,8 @@ import {
   passStatus,
 } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
-import { isAdmin, isOwner, isSecurity, requireSession } from "@/lib/session";
+import { NeighborhoodHome } from "./neighborhood-home";
+import { isAdmin, isNeighborhoodAdmin, isOwner, isSecurity, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
@@ -28,6 +29,10 @@ export default async function DashboardPage() {
   const owner = isOwner(session);
   const admin = isAdmin(session);
   const resident = owner && !admin;
+
+  if (isNeighborhoodAdmin(session)) {
+    return <NeighborhoodHome session={session} />;
+  }
 
   const [
     { count: activePasses },

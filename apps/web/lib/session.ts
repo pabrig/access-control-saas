@@ -73,12 +73,27 @@ export function canCreateNeighborhood(session: Session) {
   return hasRole(session, "SUPERADMIN", "COMPLEX_ADMIN");
 }
 
+export function canAssignResidents(session: Session) {
+  return hasRole(session, "SUPERADMIN", "COMPLEX_ADMIN", "NEIGHBORHOOD_ADMIN");
+}
+
 export function isOwner(session: Session) {
   return hasRole(session, "OWNER");
 }
 
 export function isSecurity(session: Session) {
   return hasRole(session, "SECURITY");
+}
+
+export function isNeighborhoodAdmin(session: Session) {
+  return primaryRole(session) === "NEIGHBORHOOD_ADMIN";
+}
+
+export function assignedNeighborhoodId(session: Session) {
+  return (
+    session.roles.find((row) => row.role === "NEIGHBORHOOD_ADMIN")
+      ?.neighborhood_id ?? null
+  );
 }
 
 export function primaryRole(session: Session): Role | null {
