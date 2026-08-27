@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(17);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -156,7 +156,94 @@ select throws_ok(
   'OWNER cannot create an invitation for another property'
 );
 
+select lives_ok(
+  $$ update public.properties
+     set street_name = 'Calle Nueva'
+     where id = 'bbbbbbbb-0000-0000-0000-000000000021' $$,
+  'OWNER can update their own lot data'
+);
+
+select is(
+  (select street_name from public.properties where id = 'bbbbbbbb-0000-0000-0000-000000000021'),
+  'Calle Nueva',
+  'OWNER lot street_name persists'
+);
+
+delete from public.properties
+where id = 'bbbbbbbb-0000-0000-0000-000000000021';
+
+select is(
+  (select count(*)::integer from public.properties where id = 'bbbbbbbb-0000-0000-0000-000000000021'),
+  1,
+  'OWNER cannot delete their own lot'
+);
+
+select throws_ok(
+  $$ insert into public.properties (neighborhood_id, lot_number, street_name)
+     values (
+       'bbbbbbbb-0000-0000-0000-000000000011',
+       'A9',
+       'Calle X'
+     ) $$,
+  '42501',
+  null,
+  'OWNER cannot create a new lot'
+);
+
+select throws_ok(
+  $$ update public.properties
+     set neighborhood_id = 'bbbbbbbb-0000-0000-0000-000000000012'
+     where id = 'bbbbbbbb-0000-0000-0000-000000000021' $$,
+  '42501',
+  null,
+  'OWNER cannot move their lot to another neighborhood'
+);
+
+select lives_ok(
+  $$ insert into public.invitations (
+       id, neighborhood_id, property_id, created_by_user_id,
+       guest_name, valid_from, valid_to
+     ) values (
+       'cccccccc-0000-0000-0000-000000000099',
+       'bbbbbbbb-0000-0000-0000-000000000011',
+       'bbbbbbbb-0000-0000-0000-000000000021',
+       'aaaaaaaa-0000-0000-0000-000000000003',
+       'Guest to delete',
+       now(),
+       now() + interval '1 day'
+     ) $$,
+  'OWNER can create an invitation for their lot'
+);
+
+select lives_ok(
+  $$ update public.invitations
+     set guest_name = 'Guest renamed'
+     where id = 'cccccccc-0000-0000-0000-000000000099' $$,
+  'OWNER can update an invitation for their lot'
+);
+
+select lives_ok(
+  $$ delete from public.invitations
+     where id = 'cccccccc-0000-0000-0000-000000000099' $$,
+  'OWNER can delete an invitation for their lot'
+);
+
+select is(
+  (select count(*)::integer from public.invitations where id = 'cccccccc-0000-0000-0000-000000000099'),
+  0,
+  'OWNER deleted invitation is gone'
+);
+
+delete from public.invitations
+where id = 'cccccccc-0000-0000-0000-000000000042';
+
 reset role;
+
+select is(
+  (select count(*)::integer from public.invitations where id = 'cccccccc-0000-0000-0000-000000000042'),
+  1,
+  'OWNER cannot delete an invitation of another lot'
+);
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-0000-0000-0000-000000000002', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config(

@@ -114,7 +114,7 @@ export default async function PersonasPage({
                 </select>
               </label>
               <label>
-                Lote
+                Lot or house
                 <select name="property_id" defaultValue="">
                   <option value="">—</option>
                   {(properties ?? []).map((property) => (

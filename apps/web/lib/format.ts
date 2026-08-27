@@ -23,6 +23,8 @@ export function lotLabel(input: {
   lot_number?: string | null;
   street_name?: string | null;
 }) {
-  const lot = input.lot_number ? `Lote ${input.lot_number}` : "Lote";
+  const lot = input.lot_number
+    ? `Lot or house ${input.lot_number}`
+    : "Lot or house";
   return input.street_name ? `${lot} · ${input.street_name}` : lot;
 }

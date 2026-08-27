@@ -194,7 +194,7 @@ export default async function PasesPage({
                     <Badge status={status} />
                   </div>
                   <p>
-                    {property ? lotLabel(property) : "Lote"}
+                    {property ? lotLabel(property) : "Lot or house"}
                     {invitation.guest_dni
                       ? ` · DNI ${invitation.guest_dni}`
                       : ""}

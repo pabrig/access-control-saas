@@ -122,7 +122,7 @@ export default async function DashboardPage() {
                     <div>
                       <strong>{invitation.guest_name}</strong>
                       <p className={ui.muted}>
-                        {property ? lotLabel(property) : "Lote"} · hasta{" "}
+                        {property ? lotLabel(property) : "Lot or house"} · hasta{" "}
                         {formatDateTime(invitation.valid_to)}
                       </p>
                     </div>
