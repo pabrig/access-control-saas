@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { gateMatchesInvitation } from "./access-rules.js";
+import { gateMatchesInvitation, gateMatchesProperty } from "./access-rules.js";
 import { assertGateOperator } from "./gate-auth.js";
 import { parsePlate } from "./plates.js";
 import { serviceClient } from "./supabase.js";
@@ -9,7 +9,8 @@ const bodySchema = z.object({
   query: z.string().trim().min(2).max(80),
 });
 
-export type LookupMatch = {
+export type InvitationLookupMatch = {
+  kind: "invitation";
   qrToken: string;
   guestName: string;
   guestDni: string | null;
@@ -18,6 +19,20 @@ export type LookupMatch = {
   streetName: string | null;
   neighborhoodName: string;
 };
+
+export type OwnerLookupMatch = {
+  kind: "owner";
+  qrToken: string;
+  profileId: string;
+  propertyId: string;
+  ownerName: string;
+  email: string | null;
+  lotNumber: string;
+  streetName: string | null;
+  neighborhoodName: string;
+};
+
+export type LookupMatch = InvitationLookupMatch | OwnerLookupMatch;
 
 export type LookupResult =
   | { ok: true; matches: LookupMatch[] }
@@ -43,6 +58,191 @@ function asOne<T extends object>(value: unknown): T | null {
 
 function compact(value: string) {
   return value.toLowerCase().replace(/[\s-]/g, "");
+}
+
+function ownerDisplayName(firstName: string, lastName: string) {
+  return `${firstName} ${lastName}`.trim();
+}
+
+async function lookupResidentQr(
+  gate: {
+    type: "MAIN_COMPLEX" | "INTERNAL_NEIGHBORHOOD";
+    complex_id: string | null;
+    neighborhood_id: string | null;
+  },
+  qrToken: string,
+): Promise<OwnerLookupMatch | null> {
+  const { data, error } = await serviceClient
+    .from("resident_credentials")
+    .select(
+      "qr_token, profile_id, property_id, is_revoked, profiles!inner(first_name, last_name, email, is_active), properties!inner(lot_number, street_name, neighborhood_id, neighborhoods(name, complex_id))",
+    )
+    .eq("qr_token", qrToken)
+    .eq("is_revoked", false)
+    .eq("profiles.is_active", true)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const profile = asOne<{
+    first_name: string;
+    last_name: string;
+    email: string | null;
+  }>(data.profiles);
+  const property = asOne<{
+    lot_number: string;
+    street_name: string | null;
+    neighborhood_id: string;
+    neighborhoods:
+      | { name: string; complex_id: string | null }
+      | Array<{
+          name: string;
+          complex_id: string | null;
+        }>;
+  }>(data.properties);
+
+  if (!profile || !property) {
+    return null;
+  }
+
+  const neighborhood = asOne<{ name: string; complex_id: string | null }>(
+    property.neighborhoods,
+  );
+
+  if (
+    !gateMatchesProperty({
+      gateType: gate.type,
+      gateComplexId: gate.complex_id,
+      gateNeighborhoodId: gate.neighborhood_id,
+      propertyNeighborhoodId: property.neighborhood_id,
+      propertyComplexId: neighborhood?.complex_id ?? null,
+    })
+  ) {
+    return null;
+  }
+
+  return {
+    kind: "owner",
+    qrToken: data.qr_token,
+    profileId: data.profile_id,
+    propertyId: data.property_id,
+    ownerName: ownerDisplayName(profile.first_name, profile.last_name),
+    email: profile.email,
+    lotNumber: property.lot_number,
+    streetName: property.street_name,
+    neighborhoodName: neighborhood?.name ?? "Barrio",
+  };
+}
+
+async function lookupOwners(
+  gate: {
+    type: "MAIN_COMPLEX" | "INTERNAL_NEIGHBORHOOD";
+    complex_id: string | null;
+    neighborhood_id: string | null;
+  },
+  query: string,
+  needle: string,
+  limit: number,
+): Promise<OwnerLookupMatch[]> {
+  if (UUID.test(query)) {
+    return [];
+  }
+
+  const { data, error } = await serviceClient
+    .from("resident_credentials")
+    .select(
+      "qr_token, profile_id, property_id, profiles!inner(first_name, last_name, email, dni, is_active), properties!inner(lot_number, street_name, neighborhood_id, neighborhoods(name, complex_id))",
+    )
+    .eq("is_revoked", false)
+    .eq("profiles.is_active", true)
+    .limit(120);
+
+  if (error) {
+    throw error;
+  }
+
+  const matches: OwnerLookupMatch[] = [];
+
+  for (const row of data ?? []) {
+    const profile = asOne<{
+      first_name: string;
+      last_name: string;
+      email: string | null;
+      dni: string | null;
+    }>(row.profiles);
+    const property = asOne<{
+      lot_number: string;
+      street_name: string | null;
+      neighborhood_id: string;
+      neighborhoods:
+        | { name: string; complex_id: string | null }
+        | Array<{
+            name: string;
+            complex_id: string | null;
+          }>;
+    }>(row.properties);
+
+    if (!profile || !property) {
+      continue;
+    }
+
+    const neighborhood = asOne<{ name: string; complex_id: string | null }>(
+      property.neighborhoods,
+    );
+
+    if (
+      !gateMatchesProperty({
+        gateType: gate.type,
+        gateComplexId: gate.complex_id,
+        gateNeighborhoodId: gate.neighborhood_id,
+        propertyNeighborhoodId: property.neighborhood_id,
+        propertyComplexId: neighborhood?.complex_id ?? null,
+      })
+    ) {
+      continue;
+    }
+
+    const ownerName = ownerDisplayName(profile.first_name, profile.last_name);
+    const terms = [
+      ownerName,
+      profile.first_name,
+      profile.last_name,
+      profile.email,
+      profile.dni,
+      property.lot_number,
+      property.street_name,
+    ]
+      .filter(Boolean)
+      .map((value) => compact(String(value)));
+
+    if (!terms.some((term) => term.includes(needle))) {
+      continue;
+    }
+
+    matches.push({
+      kind: "owner",
+      qrToken: row.qr_token,
+      profileId: row.profile_id,
+      propertyId: row.property_id,
+      ownerName,
+      email: profile.email,
+      lotNumber: property.lot_number,
+      streetName: property.street_name,
+      neighborhoodName: neighborhood?.name ?? "Barrio",
+    });
+
+    if (matches.length >= limit) {
+      break;
+    }
+  }
+
+  return matches;
 }
 
 export async function lookupAccess(
@@ -80,6 +280,13 @@ export async function lookupAccess(
   const query = parsed.data.query.trim();
   const plate = parsePlate(query);
   const needle = compact(plate?.normalized ?? query);
+
+  if (UUID.test(query)) {
+    const residentMatch = await lookupResidentQr(gate, query.toLowerCase());
+    if (residentMatch) {
+      return { ok: true, matches: [residentMatch] };
+    }
+  }
 
   let invitationQuery = serviceClient
     .from("invitations")
@@ -161,6 +368,7 @@ export async function lookupAccess(
       vehicles[0];
 
     matches.push({
+      kind: "invitation",
       qrToken: row.qr_token,
       guestName: row.guest_name ?? "Invitado",
       guestDni: row.guest_dni,
@@ -173,6 +381,16 @@ export async function lookupAccess(
     if (matches.length >= 8) {
       break;
     }
+  }
+
+  if (matches.length < 8) {
+    const ownerMatches = await lookupOwners(
+      gate,
+      query,
+      needle,
+      8 - matches.length,
+    );
+    matches.push(...ownerMatches);
   }
 
   return { ok: true, matches };

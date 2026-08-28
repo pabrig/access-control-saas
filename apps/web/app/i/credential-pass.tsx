@@ -58,7 +58,7 @@ export function CredentialPass({
   async function saveQr() {
     if (navigator.share) {
       await navigator.share({
-        title: `Acceso · ${neighborhoodName}`,
+        title: `Nexo · ${neighborhoodName}`,
         text: `${guestName} · ${place}`,
       });
       return;
@@ -66,7 +66,7 @@ export function CredentialPass({
 
     const link = document.createElement("a");
     link.href = qrDataUrl;
-    link.download = `acceso-${lotNumber}.png`;
+    link.download = `nexo-${lotNumber}.png`;
     link.click();
   }
 

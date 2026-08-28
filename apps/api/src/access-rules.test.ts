@@ -2,13 +2,50 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   gateMatchesInvitation,
+  gateMatchesProperty,
   invitationWindowError,
   shouldRevokeSingleUse,
+  singleUseReentryBlocked,
 } from "./access-rules.js";
 
 const complexId = "10000000-0000-0000-0000-000000000001";
 const neighborhoodId = "10000000-0000-0000-0000-000000000011";
 const otherNeighborhood = "10000000-0000-0000-0000-000000000012";
+
+test("WRONG_GATE: property scope mirrors invitation scope", () => {
+  assert.equal(
+    gateMatchesProperty({
+      gateType: "MAIN_COMPLEX",
+      gateComplexId: complexId,
+      gateNeighborhoodId: null,
+      propertyNeighborhoodId: neighborhoodId,
+      propertyComplexId: complexId,
+    }),
+    true,
+  );
+
+  assert.equal(
+    gateMatchesProperty({
+      gateType: "INTERNAL_NEIGHBORHOOD",
+      gateComplexId: null,
+      gateNeighborhoodId: neighborhoodId,
+      propertyNeighborhoodId: neighborhoodId,
+      propertyComplexId: complexId,
+    }),
+    true,
+  );
+
+  assert.equal(
+    gateMatchesProperty({
+      gateType: "INTERNAL_NEIGHBORHOOD",
+      gateComplexId: null,
+      gateNeighborhoodId: neighborhoodId,
+      propertyNeighborhoodId: otherNeighborhood,
+      propertyComplexId: complexId,
+    }),
+    false,
+  );
+});
 
 test("WRONG_GATE: main barrier only accepts the invitation complex", () => {
   assert.equal(
@@ -81,8 +118,17 @@ test("future invitations are not yet valid", () => {
   );
 });
 
-test("single-use revokes only after IN_PROPERTY", () => {
-  assert.equal(shouldRevokeSingleUse(true, "IN_PROPERTY"), true);
+test("single-use revokes only after EXITED", () => {
+  assert.equal(shouldRevokeSingleUse(true, "EXITED"), true);
+  assert.equal(shouldRevokeSingleUse(true, "IN_PROPERTY"), false);
   assert.equal(shouldRevokeSingleUse(true, "IN_COMPLEX"), false);
-  assert.equal(shouldRevokeSingleUse(false, "IN_PROPERTY"), false);
+  assert.equal(shouldRevokeSingleUse(false, "EXITED"), false);
+});
+
+test("single-use blocks a second entry after exit", () => {
+  assert.equal(singleUseReentryBlocked(true, "EXITED", "IN_COMPLEX"), true);
+  assert.equal(singleUseReentryBlocked(true, "EXITED", "IN_PROPERTY"), true);
+  assert.equal(singleUseReentryBlocked(true, "IN_COMPLEX", "EXITED"), false);
+  assert.equal(singleUseReentryBlocked(true, null, "IN_COMPLEX"), false);
+  assert.equal(singleUseReentryBlocked(false, "EXITED", "IN_COMPLEX"), false);
 });

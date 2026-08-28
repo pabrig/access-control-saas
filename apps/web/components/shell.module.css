@@ -25,17 +25,6 @@
   font-size: 1.2rem;
 }
 
-.mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--brand);
-  color: var(--on-brand);
-  display: grid;
-  place-items: center;
-  font-size: 14px;
-}
-
 .top {
   position: sticky;
   top: 0;

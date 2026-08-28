@@ -3,7 +3,7 @@ import { Banner, Empty, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import {
-  bookingSentence,
+  attendeesForBooking,
   eventSpaceName,
   isBookingLabel,
 } from "@/lib/amenities";
@@ -15,9 +15,11 @@ import { createClient } from "@/lib/supabase/server";
 import { PassEditForm } from "../pases/pass-edit-form";
 import { revokeInvitation } from "../pases/actions";
 import { BookingCalendar } from "./booking-calendar";
+import styles from "./reservas.module.css";
 
-type BookingRow = {
+type InvitationRow = {
   id: string;
+  property_id: string;
   guest_name: string | null;
   valid_from: string;
   valid_to: string;
@@ -50,16 +52,15 @@ export default async function ReservasPage({
     supabase
       .from("invitations")
       .select(
-        "id, guest_name, valid_from, valid_to, is_revoked, status, properties(lot_number, street_name), profiles!invitations_created_by_user_id_fkey(first_name, last_name)",
+        "id, property_id, guest_name, valid_from, valid_to, is_revoked, status, properties(lot_number, street_name), profiles!invitations_created_by_user_id_fkey(first_name, last_name)",
       )
       .order("valid_from", { ascending: false })
       .limit(80),
   ]);
 
   const propertyId = properties?.[0]?.id;
-  const bookings = ((invitations ?? []) as BookingRow[]).filter((row) =>
-    isBookingLabel(row.guest_name),
-  );
+  const rows = (invitations ?? []) as InvitationRow[];
+  const bookings = rows.filter((row) => isBookingLabel(row.guest_name));
   const upcoming = bookings.filter((row) => {
     const status = passStatus(row);
     return status === "active" || status === "scheduled";
@@ -99,42 +100,17 @@ export default async function ReservasPage({
     );
   }
 
-  if (barrio) {
-    return (
-      <>
-        <PageHeader
-          title="Reservas"
-          description="Quién usó el SUM y las parrillas en tu barrio."
-        />
-        {upcoming.length === 0 ? (
-          <p className={ui.quiet}>Nadie reservó un espacio todavía.</p>
-        ) : (
-          <ul className={ui.feed}>
-            {upcoming.map((row) => (
-              <BookingFeedItem key={row.id} row={row} />
-            ))}
-          </ul>
-        )}
-        {history.length > 0 ? (
-          <section>
-            <h2 className={ui.groupTitle}>Anteriores</h2>
-            <ul className={ui.feed}>
-              {history.map((row) => (
-                <BookingFeedItem key={row.id} row={row} />
-              ))}
-            </ul>
-          </section>
-        ) : null}
-      </>
-    );
-  }
-
   return (
     <>
       <PageHeader
-        title="Eventos"
+        title={barrio ? "Reservas" : "Eventos"}
+        description={
+          barrio
+            ? "Quién reservó el SUM o una parrilla, y quién confirmó que va."
+            : undefined
+        }
         actions={
-          propertyId ? (
+          !barrio && propertyId ? (
             <Link className={ui.button} href="/reservas?nuevo=1">
               <Icon name="plus" size={18} />
               Crear
@@ -145,39 +121,56 @@ export default async function ReservasPage({
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
       {flash.created ? (
         <Banner>
-          Evento listo. Los invitados aparecen en Invitados para compartir el
-          QR.
+          Evento listo. La asistencia se ve acá: pendiente hasta que confirmen.
         </Banner>
       ) : null}
       {flash.updated ? <Banner>Evento actualizado.</Banner> : null}
 
-      {!propertyId ? (
+      {!propertyId && !barrio ? (
         <Empty
           title="No hay un lote para crear el evento"
           description="Pedile al admin que te asigne el lote."
         />
       ) : upcoming.length === 0 ? (
         <Empty
-          title="No hay eventos próximos"
-          description="Creá un evento para reservar el SUM o una parrilla."
+          title={
+            barrio
+              ? "Nadie reservó un espacio todavía"
+              : "No hay eventos próximos"
+          }
+          description={
+            barrio
+              ? undefined
+              : "Creá un evento para reservar el SUM o una parrilla."
+          }
         />
       ) : (
         <ul className={ui.list}>
           {upcoming.map((row) => (
-            <EventCard key={row.id} row={row} editable />
+            <EventCard
+              key={row.id}
+              row={row}
+              attendees={attendeesForBooking(row, rows)}
+              editable={!barrio}
+              showHost={barrio}
+            />
           ))}
         </ul>
       )}
 
       {history.length > 0 ? (
         <section>
-          <h2 className={ui.groupTitle}>Historial</h2>
+          <h2 className={ui.groupTitle}>
+            {barrio ? "Anteriores" : "Historial"}
+          </h2>
           <ul className={ui.list}>
             {history.map((row) => (
               <EventCard
                 key={row.id}
                 row={row}
-                editable={passStatus(row) !== "revoked"}
+                attendees={attendeesForBooking(row, rows)}
+                editable={!barrio && passStatus(row) !== "revoked"}
+                showHost={barrio}
               />
             ))}
           </ul>
@@ -187,7 +180,29 @@ export default async function ReservasPage({
   );
 }
 
-function BookingFeedItem({ row }: { row: BookingRow }) {
+function attendanceLabel(row: InvitationRow) {
+  if (row.is_revoked) {
+    return "Cancelado";
+  }
+  if (row.status === "DRAFT") {
+    return "Pendiente";
+  }
+  return "Confirmó";
+}
+
+function EventCard({
+  row,
+  attendees,
+  editable,
+  showHost,
+}: {
+  row: InvitationRow;
+  attendees: InvitationRow[];
+  editable: boolean;
+  showHost: boolean;
+}) {
+  const status = passStatus(row);
+  const live = status === "active" || status === "scheduled";
   const booker = asOne<{
     first_name: string | null;
     last_name: string | null;
@@ -196,37 +211,59 @@ function BookingFeedItem({ row }: { row: BookingRow }) {
     lot_number: string;
     street_name: string | null;
   }>(row.properties);
-  const resident = personName(booker ?? {}) || "Un vecino";
-  const space = eventSpaceName(row.guest_name);
-
-  return (
-    <li>
-      <div className={ui.feedItem}>
-        <span className={ui.feedIcon} aria-hidden>
-          <Icon name="calendar" size={18} />
-        </span>
-        <span className={ui.feedBody}>
-          <strong>{bookingSentence(resident, space)}</strong>
-          <span className={ui.feedMeta}>
-            {property ? `${lotLabel(property)} · ` : ""}
-            {formatRange(row.valid_from, row.valid_to)}
-          </span>
-        </span>
-      </div>
-    </li>
-  );
-}
-
-function EventCard({ row, editable }: { row: BookingRow; editable: boolean }) {
-  const status = passStatus(row);
+  const confirmed = attendees.filter(
+    (person) => person.status === "READY" && !person.is_revoked,
+  ).length;
 
   return (
     <li className={ui.card}>
       <div>
         <h2>{eventSpaceName(row.guest_name)}</h2>
         <p className={ui.muted}>{formatRange(row.valid_from, row.valid_to)}</p>
+        {showHost ? (
+          <p className={ui.muted}>
+            {personName(booker ?? {}) || "Un vecino"}
+            {property ? ` · ${lotLabel(property)}` : ""}
+          </p>
+        ) : null}
       </div>
-      {status === "active" || status === "scheduled" ? (
+
+      <section className={styles.attendance} aria-label="Asistencia">
+        <header className={styles.attendanceHead}>
+          <h3>Asistencia</h3>
+          <span>
+            {attendees.length === 0
+              ? "Nadie cargado"
+              : `${confirmed}/${attendees.length}`}
+          </span>
+        </header>
+        {attendees.length === 0 ? (
+          <p className={styles.attendanceEmpty}>
+            Cuando confirmen, aparecen acá — uno o varios, igual.
+          </p>
+        ) : (
+          <ul className={styles.people}>
+            {attendees.map((person) => (
+              <li key={person.id}>
+                <Link className={styles.person} href={`/pases/${person.id}`}>
+                  <strong>{person.guest_name ?? "Sin nombre"}</strong>
+                  <span
+                    className={
+                      person.status === "READY" && !person.is_revoked
+                        ? styles.confirmed
+                        : styles.pending
+                    }
+                  >
+                    {attendanceLabel(person)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {editable && live ? (
         <form action={revokeInvitation}>
           <input type="hidden" name="id" value={row.id} />
           <input type="hidden" name="next" value="/reservas" />

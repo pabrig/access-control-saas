@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { NexoLogo } from "@/components/brand/nexo-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/lib/supabase/server";
 import { signIn } from "./actions";
@@ -23,7 +24,9 @@ export default async function LoginPage({
   return (
     <main className={styles.main}>
       <div className={styles.top}>
-        <p className={styles.wordmark}>Acceso</p>
+        <p className={styles.wordmark}>
+          <NexoLogo />
+        </p>
         <ThemeToggle />
       </div>
       <section className={styles.card}>

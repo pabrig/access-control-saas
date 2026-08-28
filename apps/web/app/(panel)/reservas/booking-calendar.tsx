@@ -142,7 +142,7 @@ export function BookingCalendar({
       </div>
 
       <label>
-        Quiénes vienen (uno por línea, opcional)
+        Quiénes vienen (uno por línea). Confirman con el link del evento.
         <textarea
           name="guests"
           rows={4}

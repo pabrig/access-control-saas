@@ -14,6 +14,25 @@ export async function signIn(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile && profile.is_active === false) {
+      await supabase.auth.signOut();
+      redirect(
+        `/login?error=${encodeURIComponent("Esta cuenta está desactivada.")}`,
+      );
+    }
+  }
+
   redirect("/");
 }
 

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { NexoLogo } from "@/components/brand/nexo-logo";
 import { createClient } from "@/lib/supabase/server";
 import { signIn } from "./actions";
 import styles from "./login.module.css";
@@ -14,7 +15,17 @@ export default async function LoginPage({
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/");
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || profile.is_active !== false) {
+      redirect("/");
+    }
+
+    await supabase.auth.signOut();
   }
 
   const { error } = await searchParams;
@@ -22,7 +33,9 @@ export default async function LoginPage({
   return (
     <main className={styles.main}>
       <section className={styles.card}>
-        <p className={styles.brand}>Acceso</p>
+        <p className={styles.brand}>
+          <NexoLogo />
+        </p>
         <h1>Entrá a tu comunidad</h1>
         <p className={styles.lead}>
           Con tu email ves solo lo de tu lote, tu barrio o el complejo, según

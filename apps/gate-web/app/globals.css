@@ -1,49 +1,84 @@
 :root {
   color-scheme: light;
-  --bg: #f3efe6;
-  --bg-tint: #e7efe9;
-  --surface: #fffcf7;
-  --ink: #1c1915;
-  --muted: #5f584e;
-  --line: #e2dacd;
+  /* Nexo — Flujo y Velocidad (palette + Plus Jakarta Sans) */
+  --nexo-base: #0a0a0a;
+  --nexo-surface: #171717;
+  --nexo-border: #262626;
+  --nexo-azure: #7dd3fc;
+  --nexo-azure-dark: #0284c7;
+  --nexo-azure-hover: #38bdf8;
+  --bg: #f5f5f5;
+  --bg-tint: #e0f2fe;
+  --surface: #ffffff;
+  --ink: #0a0a0a;
+  --muted: #525252;
+  --line: #e5e5e5;
   --input: #ffffff;
-  --brand: #0c5c4c;
-  --brand-hover: #0a4c3f;
-  --brand-soft: #dff0ea;
+  --brand: var(--nexo-azure-dark);
+  --brand-hover: #0369a1;
+  --brand-soft: #e0f2fe;
   --on-brand: #ffffff;
-  --ok: #276749;
-  --ok-soft: #e7f5ec;
-  --warn: #8a5a10;
-  --warn-soft: #fff4d6;
-  --danger: #9b2c2c;
-  --danger-soft: #fdeaea;
+  --ok: var(--nexo-azure-dark);
+  --ok-soft: #e0f2fe;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
   --radius: 16px;
   --radius-sm: 10px;
   --shadow:
-    0 1px 2px rgba(28, 25, 21, 0.05), 0 10px 28px rgba(28, 25, 21, 0.06);
-  --font: var(--font-sans), "Segoe UI", sans-serif;
+    0 1px 2px rgba(10, 10, 10, 0.05), 0 10px 28px rgba(10, 10, 10, 0.06);
+  --font: var(--font-sans), "Plus Jakarta Sans", "Segoe UI", sans-serif;
 }
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #12110f;
-  --bg-tint: #1a2a26;
-  --surface: #1c1b18;
-  --ink: #f3eee6;
-  --muted: #b4ada3;
-  --line: #34322e;
-  --input: #12110f;
-  --brand: #3dcfb3;
-  --brand-hover: #62e0c6;
-  --brand-soft: #16352e;
-  --on-brand: #06241d;
-  --ok: #86efac;
-  --ok-soft: #14532d;
+  --bg: var(--nexo-base);
+  --bg-tint: #082f49;
+  --surface: var(--nexo-surface);
+  --ink: #fafafa;
+  --muted: #a3a3a3;
+  --line: var(--nexo-border);
+  --input: var(--nexo-base);
+  --brand: var(--nexo-azure);
+  --brand-hover: var(--nexo-azure-hover);
+  --brand-soft: #0c4a6e;
+  --on-brand: var(--nexo-base);
+  --ok: var(--nexo-azure);
+  --ok-soft: #0c4a6e;
   --warn: #fbbf24;
   --warn-soft: #422006;
   --danger: #fca5a5;
   --danger-soft: #450a0a;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.nexo-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nexo-logo-pulse {
+  animation: nexo-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes nexo-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexo-logo-pulse {
+    animation: none;
+  }
 }
 
 html {

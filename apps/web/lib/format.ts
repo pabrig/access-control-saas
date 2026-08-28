@@ -30,6 +30,14 @@ export function formatTime(value: string | Date) {
   return timeOnly.format(new Date(value));
 }
 
+const dateOnly = new Intl.DateTimeFormat("es-AR", {
+  dateStyle: "short",
+});
+
+export function formatDate(value: string | Date) {
+  return dateOnly.format(new Date(value));
+}
+
 export function formatDayHeading(value: string | Date, now = new Date()) {
   const day = new Date(value);
   if (day.toDateString() === now.toDateString()) {

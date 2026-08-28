@@ -20,24 +20,27 @@ export default async function PanelLayout({
   const nav = resident
     ? [
         { href: "/", label: "Inicio" },
+        { href: "/credencial", label: "Credencial" },
         { href: "/pases", label: "Invitados" },
         { href: "/reservas", label: "Eventos" },
-        { href: "/movimientos", label: "Historial" },
+        { href: "/movimientos", label: "Movimientos" },
         { href: "/lotes", label: "Mi lote" },
       ]
     : barrio
       ? [
           { href: "/", label: "Inicio" },
-          { href: "/pases", label: "Invitados" },
+          { href: "/pases", label: "Pases" },
           { href: "/reservas", label: "Reservas" },
           { href: "/movimientos", label: "Movimientos" },
           { href: "/lotes", label: "Lotes" },
           { href: "/personas", label: "Personas" },
+          { href: "/barreras", label: "Barreras" },
+          { href: "/turnos", label: "Turnos" },
         ]
       : [
           { href: "/", label: "Inicio" },
           { href: "/pases", label: "Pases" },
-          { href: "/movimientos", label: "Libro de guardia" },
+          { href: "/movimientos", label: "Movimientos" },
           {
             href: "/lotes",
             label:

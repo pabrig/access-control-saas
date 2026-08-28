@@ -46,7 +46,7 @@ export default async function GuestInvitePage({
       ? await QRCode.toDataURL(invite.qr_token, {
           margin: 1,
           width: 280,
-          color: { dark: "#1c1915", light: "#ffffff" },
+          color: { dark: "#0a0a0a", light: "#ffffff" },
         })
       : null;
 

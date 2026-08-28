@@ -1,13 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import QRCode from "qrcode";
 import { Badge, Banner, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import { isBookingLabel } from "@/lib/amenities";
-import { formatDateTime, formatRange, personName } from "@/lib/format";
-import { accessActionLabel, passStatus } from "@/lib/labels";
+import {
+  formatDateTime,
+  formatRange,
+  lotLabel,
+  personName,
+} from "@/lib/format";
+import { accessActionLabel, passIsShareable, passStatus } from "@/lib/labels";
 import {
   inviteShareUrl,
   mailShareHref,
@@ -15,12 +21,14 @@ import {
   whatsappShareHref,
 } from "@/lib/invite-url";
 import { asOne } from "@/lib/relations";
-import { canManageStructure, requireSession } from "@/lib/session";
+import { canManageStructure, isAdmin, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { CopyLinkButton } from "../copy-link-button";
 import { PassEditForm } from "../pass-edit-form";
 import { deleteInvitation, revokeInvitation } from "../actions";
 import styles from "../pases.module.css";
+
+export const dynamic = "force-dynamic";
 
 export default async function InvitationDetailPage({
   params,
@@ -29,6 +37,8 @@ export default async function InvitationDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; updated?: string }>;
 }) {
+  await connection();
+
   const { id } = await params;
   const flash = await searchParams;
   const origin = await publicAppUrl();
@@ -47,6 +57,22 @@ export default async function InvitationDetailPage({
     notFound();
   }
 
+  const status = passStatus(invitation);
+  const ended = status === "expired" || status === "revoked";
+  const shareable = passIsShareable(status);
+  const ready = invitation.status === "READY";
+  const name = invitation.guest_name ?? "Sin aceptar";
+  const live =
+    status === "active" || status === "scheduled" || status === "waiting";
+
+  const shareUrl = shareable
+    ? inviteShareUrl(origin, invitation.share_token)
+    : null;
+  const qrDataUrl =
+    shareable && invitation.qr_token
+      ? await QRCode.toDataURL(invitation.qr_token, { margin: 1, width: 168 })
+      : null;
+
   const { data: logs } = await supabase
     .from("access_logs")
     .select(
@@ -55,24 +81,23 @@ export default async function InvitationDetailPage({
     .eq("invitation_id", id)
     .order("timestamp", { ascending: true });
 
-  const shareUrl = inviteShareUrl(origin, invitation.share_token);
-  const qrDataUrl = invitation.qr_token
-    ? await QRCode.toDataURL(invitation.qr_token, { margin: 1, width: 168 })
-    : null;
-  const status = passStatus(invitation);
-  const ready = invitation.status === "READY";
-  const name = invitation.guest_name ?? "Sin aceptar";
-  const live =
-    status === "active" || status === "scheduled" || status === "waiting";
-  const editable = status !== "revoked";
+  const admin = isAdmin(session);
+  const property = asOne<{
+    lot_number: string | null;
+    street_name: string | null;
+  }>(invitation.properties);
 
   return (
     <>
       <Link className={ui.backLink} href="/pases">
         <Icon name="back" size={18} />
-        {canManageStructure(session) ? "Pases" : "Invitados"}
+        {admin ? "Pases" : "Invitados"}
       </Link>
-      <PageHeader title={name} actions={<Badge status={status} />} />
+      <PageHeader
+        kicker={admin ? lotLabel(property ?? {}) : undefined}
+        title={name}
+        actions={<Badge status={status} />}
+      />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
       {flash.updated ? <Banner>Guardado.</Banner> : null}
 
@@ -88,7 +113,18 @@ export default async function InvitationDetailPage({
           <p className={ui.muted}>Un solo ingreso</p>
         ) : null}
 
-        {qrDataUrl ? (
+        {ended ? (
+          <div className={styles.endedPass}>
+            <strong>
+              {status === "expired" ? "Pase vencido" : "Pase cancelado"}
+            </strong>
+            <p>
+              {status === "expired"
+                ? `Venció el ${formatDateTime(invitation.valid_to)}. Ya no se puede usar ni compartir.`
+                : "Fue cancelado. Ya no se puede usar ni compartir."}
+            </p>
+          </div>
+        ) : qrDataUrl ? (
           <figure className={styles.qr}>
             <Image
               alt={`QR de ${name}`}
@@ -104,23 +140,25 @@ export default async function InvitationDetailPage({
           </p>
         )}
 
-        <div className={styles.share}>
-          <a
-            className={styles.shareAction}
-            href={whatsappShareHref(shareUrl, ready)}
-          >
-            <Icon name="whatsapp" />
-            WhatsApp
-          </a>
-          <CopyLinkButton url={shareUrl} compact />
-          <a
-            className={styles.shareAction}
-            href={mailShareHref(shareUrl, ready)}
-          >
-            <Icon name="mail" />
-            Mail
-          </a>
-        </div>
+        {shareable && shareUrl ? (
+          <div className={styles.share}>
+            <a
+              className={styles.shareAction}
+              href={whatsappShareHref(shareUrl, ready)}
+            >
+              <Icon name="whatsapp" />
+              WhatsApp
+            </a>
+            <CopyLinkButton url={shareUrl} compact />
+            <a
+              className={styles.shareAction}
+              href={mailShareHref(shareUrl, ready)}
+            >
+              <Icon name="mail" />
+              Mail
+            </a>
+          </div>
+        ) : null}
       </section>
 
       <div className={ui.stack}>
@@ -147,7 +185,7 @@ export default async function InvitationDetailPage({
           </section>
         ) : null}
 
-        {editable ? (
+        {shareable ? (
           <section className={ui.card}>
             <h2>Horario</h2>
             <PassEditForm
@@ -155,9 +193,19 @@ export default async function InvitationDetailPage({
               guestName={invitation.guest_name}
               validFrom={invitation.valid_from}
               validTo={invitation.valid_to}
-              allowName={status === "waiting" || status === "expired"}
+              allowName={status === "waiting"}
               next={`/pases/${invitation.id}`}
             />
+          </section>
+        ) : ended && status === "expired" ? (
+          <section className={ui.card}>
+            <h2>Horario</h2>
+            <p className={ui.muted}>
+              {formatRange(invitation.valid_from, invitation.valid_to)}
+            </p>
+            <p className={ui.muted}>
+              Para una nueva visita, creá otro pase desde Invitados.
+            </p>
           </section>
         ) : null}
 

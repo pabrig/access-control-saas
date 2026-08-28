@@ -39,7 +39,7 @@ export async function requireSession(): Promise<Session> {
   const [{ data: profile }, { data: roles }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("first_name, last_name")
+      .select("first_name, last_name, is_active")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -47,6 +47,13 @@ export async function requireSession(): Promise<Session> {
       .select("id, role, complex_id, neighborhood_id, property_id")
       .eq("user_id", user.id),
   ]);
+
+  if (profile && profile.is_active === false) {
+    await supabase.auth.signOut();
+    redirect(
+      `/login?error=${encodeURIComponent("Esta cuenta está desactivada.")}`,
+    );
+  }
 
   return {
     userId: user.id,
@@ -97,6 +104,47 @@ export function canAssignResidents(session: Session) {
   return hasRole(session, "SUPERADMIN", "COMPLEX_ADMIN", "NEIGHBORHOOD_ADMIN");
 }
 
+export function assignableRoles(session: Session): Role[] {
+  if (isSuperadmin(session)) {
+    return [
+      "OWNER",
+      "NEIGHBORHOOD_ADMIN",
+      "COMPLEX_ADMIN",
+      "SECURITY",
+      "SUPERADMIN",
+    ];
+  }
+  if (hasRole(session, "COMPLEX_ADMIN")) {
+    return ["OWNER", "NEIGHBORHOOD_ADMIN", "SECURITY"];
+  }
+  if (hasRole(session, "NEIGHBORHOOD_ADMIN")) {
+    return ["OWNER", "SECURITY"];
+  }
+  return [];
+}
+
+export function canRemoveAssignedRole(session: Session, role: Role) {
+  if (isSuperadmin(session)) {
+    return true;
+  }
+  if (hasRole(session, "COMPLEX_ADMIN")) {
+    return (
+      role === "OWNER" || role === "NEIGHBORHOOD_ADMIN" || role === "SECURITY"
+    );
+  }
+  if (hasRole(session, "NEIGHBORHOOD_ADMIN")) {
+    return role === "OWNER" || role === "SECURITY";
+  }
+  return false;
+}
+
+export function assignedNeighborhoodId(session: Session) {
+  return (
+    session.roles.find((row) => row.role === "NEIGHBORHOOD_ADMIN")
+      ?.neighborhood_id ?? null
+  );
+}
+
 export function isOwner(session: Session) {
   return hasRole(session, "OWNER");
 }
@@ -107,13 +155,6 @@ export function isSecurity(session: Session) {
 
 export function isNeighborhoodAdmin(session: Session) {
   return primaryRole(session) === "NEIGHBORHOOD_ADMIN";
-}
-
-export function assignedNeighborhoodId(session: Session) {
-  return (
-    session.roles.find((row) => row.role === "NEIGHBORHOOD_ADMIN")
-      ?.neighborhood_id ?? null
-  );
 }
 
 export function primaryRole(session: Session): Role | null {

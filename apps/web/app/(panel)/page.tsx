@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Badge, Banner, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
-import { isBookingLabel } from "@/lib/amenities";
-import { formatRange, formatTime, initials } from "@/lib/format";
+import { withoutEventPeople } from "@/lib/amenities";
+import { formatRange, formatTime, initials, personName } from "@/lib/format";
 import { accessActionShort, isExitAction, passStatus } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
 import { CommunityHome } from "./community-home";
@@ -24,22 +24,21 @@ export default async function DashboardPage() {
   const [{ data: invitations }, { data: logs }] = await Promise.all([
     supabase
       .from("invitations")
-      .select("id, guest_name, valid_from, valid_to, is_revoked, status")
+      .select(
+        "id, property_id, guest_name, valid_from, valid_to, is_revoked, status",
+      )
       .order("created_at", { ascending: false })
-      .limit(8),
+      .limit(40),
     supabase
       .from("access_logs")
       .select(
-        "id, action_type, timestamp, invitation_id, invitations(id, guest_name)",
+        "id, action_type, timestamp, invitation_id, profile_id, invitations(id, guest_name), resident:profiles!access_logs_profile_id_fkey(first_name, last_name)",
       )
       .order("timestamp", { ascending: false })
       .limit(4),
   ]);
 
-  const liveInvites = (invitations ?? []).filter((row) => {
-    if (resident && isBookingLabel(row.guest_name)) {
-      return false;
-    }
+  const liveInvites = withoutEventPeople(invitations ?? []).filter((row) => {
     const status = passStatus(row);
     return (
       status === "active" || status === "scheduled" || status === "waiting"
@@ -52,6 +51,10 @@ export default async function DashboardPage() {
         <PageHeader title={`Hola, ${session.firstName}`} />
 
         <nav className={ui.quick} aria-label="Acciones rápidas">
+          <Link className={ui.quickLink} href="/credencial">
+            <Icon name="qr" />
+            Credencial
+          </Link>
           <Link className={ui.quickLink} href="/pases?nuevo=1">
             <Icon name="person" />
             Invitar
@@ -105,7 +108,7 @@ export default async function DashboardPage() {
         <section style={{ marginTop: 28 }}>
           <div className={ui.sectionHead}>
             <h2>En la puerta</h2>
-            <Link href="/movimientos">Historial</Link>
+            <Link href="/movimientos">Movimientos</Link>
           </div>
           {(logs ?? []).length === 0 ? (
             <p className={ui.quiet}>Todavía no hubo ingresos.</p>
@@ -116,6 +119,15 @@ export default async function DashboardPage() {
                   id: string;
                   guest_name: string | null;
                 }>(log.invitations);
+                const resident = asOne<{
+                  first_name: string;
+                  last_name: string;
+                }>(log.resident);
+                const label =
+                  invitation?.guest_name ??
+                  (resident
+                    ? `${personName(resident)} · Propietario`
+                    : "Movimiento");
                 const href = invitation?.id
                   ? `/pases/${invitation.id}`
                   : "/movimientos";
@@ -130,7 +142,7 @@ export default async function DashboardPage() {
                         <Icon name={exited ? "exit" : "enter"} size={18} />
                       </span>
                       <span className={ui.feedBody}>
-                        <strong>{invitation?.guest_name ?? "Invitado"}</strong>
+                        <strong>{label}</strong>
                         <span className={ui.feedMeta}>
                           {accessActionShort(log.action_type)}
                         </span>

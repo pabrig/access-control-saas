@@ -1,3 +1,4 @@
+import { NexoLogo } from "@/components/brand/nexo-logo";
 import { Icon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { signOut } from "../login/actions";
@@ -10,7 +11,9 @@ export default async function ScanPage() {
   return (
     <div className={styles.shell}>
       <header className={styles.top}>
-        <p className={styles.brand}>Acceso</p>
+        <p className={styles.brand}>
+          <NexoLogo />
+        </p>
         <div className={styles.topActions}>
           <ThemeToggle />
           <form action={signOut}>

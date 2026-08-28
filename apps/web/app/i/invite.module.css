@@ -13,6 +13,8 @@
 }
 
 .brand {
+  display: flex;
+  align-items: center;
   font-weight: 750;
   letter-spacing: -0.04em;
   font-size: 1.15rem;
@@ -66,7 +68,7 @@
   width: 100%;
   padding: 18px 16px 14px;
   background: #fff;
-  color: #1c1915;
+  color: var(--nexo-base);
   border: 1px solid var(--line);
   border-radius: 20px;
   display: grid;
@@ -76,7 +78,7 @@
 
 .qr figcaption {
   font-size: 13px;
-  color: #5f584e;
+  color: var(--muted);
   text-align: center;
 }
 

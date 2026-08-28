@@ -33,6 +33,38 @@ export function bookingSentence(residentName: string, space: string) {
   return `${residentName} reservó ${article}${space}`;
 }
 
+type EventSlot = {
+  property_id: string;
+  valid_from: string;
+  valid_to: string;
+  guest_name?: string | null;
+};
+
+export function eventSlotKey(row: EventSlot) {
+  return `${row.property_id}|${row.valid_from}|${row.valid_to}`;
+}
+
+export function withoutEventPeople<T extends EventSlot>(rows: T[]) {
+  const bookingSlots = new Set(
+    rows.filter((row) => isBookingLabel(row.guest_name)).map(eventSlotKey),
+  );
+
+  return rows.filter(
+    (row) =>
+      !isBookingLabel(row.guest_name) && !bookingSlots.has(eventSlotKey(row)),
+  );
+}
+
+export function attendeesForBooking<T extends EventSlot>(
+  booking: T,
+  rows: T[],
+) {
+  const key = eventSlotKey(booking);
+  return rows.filter(
+    (row) => !isBookingLabel(row.guest_name) && eventSlotKey(row) === key,
+  );
+}
+
 export function monthMatrix(year: number, month: number) {
   const first = new Date(year, month, 1);
   const start = new Date(first);

@@ -11,6 +11,9 @@ const ERROR_COPY: Record<string, string> = {
   INVALID_PLATE: "La patente no es AAA 000 ni AA000AA",
   UNKNOWN_PLATE: "Esa patente no está en la invitación",
   NOT_READY: "Todavía no tiene QR",
+  ALREADY_USED: "Ya usó este pase (un solo ingreso)",
+  NOT_OWNER: "No es propietario de ese lote",
+  INACTIVE_OWNER: "Propietario inactivo",
   UNAUTHENTICATED: "Sesión expirada",
 };
 
