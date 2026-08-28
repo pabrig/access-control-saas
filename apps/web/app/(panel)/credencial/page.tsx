@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { Banner, PageHeader } from "@/components/ui";
-import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import {
   publicAppUrl,

@@ -116,6 +116,10 @@ export async function removeResidentVehicle(formData: FormData) {
 
 export async function createCoOwnerInvite(formData: FormData) {
   const session = await requireSession();
+  if (!isOwner(session)) {
+    fail("/credencial", "No podés invitar co-propietarios.");
+  }
+
   const propertyId = String(formData.get("property_id") ?? "");
   const inviteeDni = String(formData.get("invitee_dni") ?? "").trim() || null;
   const inviteeEmail = String(formData.get("invitee_email") ?? "").trim() || null;
@@ -140,6 +144,10 @@ export async function createCoOwnerInvite(formData: FormData) {
 
 export async function revokeCoOwnerInvite(formData: FormData) {
   const session = await requireSession();
+  if (!isOwner(session)) {
+    fail("/credencial", "No podés cancelar invitaciones.");
+  }
+
   const inviteId = String(formData.get("invite_id") ?? "");
   const propertyId = String(formData.get("property_id") ?? "");
 
