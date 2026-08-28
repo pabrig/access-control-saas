@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ui from "@/components/ui.module.css";
 import { Icon } from "@/components/icons";
+import { SubmitButton } from "@/components/submit-button";
+import ui from "@/components/ui.module.css";
 import { lotLabel, toLocalInput } from "@/lib/format";
 import { createDoorInvite, createShareInvite } from "./actions";
 import styles from "./pases.module.css";
@@ -169,9 +170,9 @@ export function PassComposer({
           />
           Un solo ingreso
         </label>
-        <button className={ui.button} type="submit">
+        <SubmitButton pendingLabel={door ? "Generando…" : "Creando…"}>
           {door ? "Generar QR" : "Crear y compartir"}
-        </button>
+        </SubmitButton>
       </form>
     </section>
   );

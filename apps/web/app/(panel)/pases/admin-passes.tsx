@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Banner, Empty, PageHeader, Stat } from "@/components/ui";
 import { Icon } from "@/components/icons";
+import { PendingLink } from "@/components/pending-link";
 import ui from "@/components/ui.module.css";
 import { lotLabel } from "@/lib/format";
 import { passStatus } from "@/lib/labels";
@@ -180,10 +180,10 @@ export function AdminPasses({
         title="Pases"
         description="Pedidos por lote. Aunque estén pendientes o el invitado no haya confirmado, se ven acá."
         actions={
-          <Link className={ui.button} href="/pases?nuevo=1">
+          <PendingLink className={ui.button} href="/pases?nuevo=1">
             <Icon name="plus" size={18} />
             Nuevo pase
-          </Link>
+          </PendingLink>
         }
       />
       {error ? <Banner tone="danger">{error}</Banner> : null}

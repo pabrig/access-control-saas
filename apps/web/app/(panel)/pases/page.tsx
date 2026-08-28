@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Banner, Empty, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
+import { PendingLink } from "@/components/pending-link";
 import ui from "@/components/ui.module.css";
 import { isBookingLabel, withoutEventPeople } from "@/lib/amenities";
 import { passStatus } from "@/lib/labels";
@@ -103,10 +104,10 @@ export default async function PasesPage({
         title="Invitados"
         actions={
           canCreate ? (
-            <Link className={ui.button} href="/pases?nuevo=1">
+            <PendingLink className={ui.button} href="/pases?nuevo=1">
               <Icon name="plus" size={18} />
               Invitar
-            </Link>
+            </PendingLink>
           ) : null
         }
       />

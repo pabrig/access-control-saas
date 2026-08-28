@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/login/actions";
 import { NexoLogo } from "@/components/brand/nexo-logo";
@@ -23,7 +24,34 @@ const NAV_ICON = {
   "/personas": "users",
   "/barreras": "car",
   "/turnos": "clock",
+  "/credencial": "users",
 } as const;
+
+function ShellLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link href={href} className={className} prefetch>
+      {children}
+      <LinkPending />
+    </Link>
+  );
+}
+
+function LinkPending() {
+  const { pending } = useLinkStatus();
+  if (!pending) {
+    return null;
+  }
+
+  return <span className={styles.linkPendingMark} data-pending="true" />;
+}
 
 export function AppShell({
   firstName,
@@ -72,12 +100,12 @@ export function AppShell({
       }
     >
       <aside className={styles.sidebar}>
-        <Link className={styles.brand} href="/">
+        <ShellLink className={styles.brand} href="/">
           <NexoLogo />
-        </Link>
+        </ShellLink>
         <nav className={styles.nav} aria-label="Principal">
           {nav.map((item) => (
-            <Link
+            <ShellLink
               key={item.href}
               className={
                 isActive(item.href) ? styles.navActive : styles.navLink
@@ -89,7 +117,7 @@ export function AppShell({
                 size={18}
               />
               {item.label}
-            </Link>
+            </ShellLink>
           ))}
         </nav>
         <div className={styles.user}>
@@ -108,10 +136,11 @@ export function AppShell({
         </div>
       </aside>
       <div className={styles.body}>
+        <div className={styles.progressTrack} aria-hidden />
         <header className={styles.top}>
-          <Link className={styles.brandMobile} href="/">
+          <ShellLink className={styles.brandMobile} href="/">
             <NexoLogo />
-          </Link>
+          </ShellLink>
           <div className={styles.topActions}>
             <ThemeToggle />
             <form action={signOut}>
@@ -127,7 +156,7 @@ export function AppShell({
           {variant === "ops" ? (
             <nav className={styles.mobileNav} aria-label="Secciones">
               {nav.map((item) => (
-                <Link
+                <ShellLink
                   key={item.href}
                   className={
                     isActive(item.href) ? styles.chipActive : styles.chip
@@ -135,7 +164,7 @@ export function AppShell({
                   href={item.href}
                 >
                   {item.label}
-                </Link>
+                </ShellLink>
               ))}
             </nav>
           ) : null}
@@ -144,7 +173,7 @@ export function AppShell({
         {variant === "resident" ? (
           <nav className={styles.tabBar} aria-label="Acciones frecuentes">
             {tabs.map((item) => (
-              <Link
+              <ShellLink
                 key={item.href}
                 className={isActive(item.href) ? styles.tabActive : styles.tab}
                 href={item.href}
@@ -153,7 +182,7 @@ export function AppShell({
                   name={NAV_ICON[item.href as keyof typeof NAV_ICON] ?? "home"}
                 />
                 {item.label}
-              </Link>
+              </ShellLink>
             ))}
           </nav>
         ) : null}

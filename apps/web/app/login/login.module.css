@@ -78,6 +78,11 @@
   background: var(--brand-hover);
 }
 
+.form button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .hint {
   font-size: 13px;
 }

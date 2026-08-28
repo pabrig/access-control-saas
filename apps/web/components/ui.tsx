@@ -108,3 +108,50 @@ export function Badge({
     </span>
   );
 }
+
+export function Skeleton({
+  width,
+  height = 16,
+  radius,
+  className,
+}: {
+  width?: string | number;
+  height?: string | number;
+  radius?: string | number;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`${styles.skeleton}${className ? ` ${className}` : ""}`}
+      style={{
+        width: width ?? "100%",
+        height,
+        borderRadius: radius ?? 10,
+      }}
+      aria-hidden
+    />
+  );
+}
+
+export function PageSkeleton() {
+  return (
+    <div className={styles.pageSkeleton} aria-busy="true" aria-live="polite">
+      <span className={styles.skeletonLabel}>Cargando…</span>
+      <div className={styles.skelHeader}>
+        <Skeleton height={12} width="22%" />
+        <Skeleton height={30} width="48%" />
+        <Skeleton height={14} width="62%" />
+      </div>
+      <div className={styles.skelStats}>
+        <Skeleton height={76} radius={16} />
+        <Skeleton height={76} radius={16} />
+        <Skeleton height={76} radius={16} />
+      </div>
+      <div className={styles.skelStack}>
+        <Skeleton height={112} radius={16} />
+        <Skeleton height={112} radius={16} />
+        <Skeleton height={88} radius={16} />
+      </div>
+    </div>
+  );
+}
