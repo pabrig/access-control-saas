@@ -16,6 +16,8 @@
 }
 
 .wordmark {
+  display: flex;
+  align-items: center;
   font-weight: 750;
   letter-spacing: -0.04em;
   font-size: 1.15rem;
@@ -87,6 +89,10 @@
   background: var(--brand);
   color: var(--on-brand);
   font-weight: 700;
+}
+
+.form button:hover {
+  background: var(--brand-hover);
 }
 
 .hint {

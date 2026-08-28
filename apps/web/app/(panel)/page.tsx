@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Badge, Banner, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
-import { isBookingLabel } from "@/lib/amenities";
+import { withoutEventPeople } from "@/lib/amenities";
 import { formatRange, formatTime, initials } from "@/lib/format";
 import { accessActionShort, isExitAction, passStatus } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
@@ -24,9 +24,11 @@ export default async function DashboardPage() {
   const [{ data: invitations }, { data: logs }] = await Promise.all([
     supabase
       .from("invitations")
-      .select("id, guest_name, valid_from, valid_to, is_revoked, status")
+      .select(
+        "id, property_id, guest_name, valid_from, valid_to, is_revoked, status",
+      )
       .order("created_at", { ascending: false })
-      .limit(8),
+      .limit(40),
     supabase
       .from("access_logs")
       .select(
@@ -36,10 +38,7 @@ export default async function DashboardPage() {
       .limit(4),
   ]);
 
-  const liveInvites = (invitations ?? []).filter((row) => {
-    if (resident && isBookingLabel(row.guest_name)) {
-      return false;
-    }
+  const liveInvites = withoutEventPeople(invitations ?? []).filter((row) => {
     const status = passStatus(row);
     return (
       status === "active" || status === "scheduled" || status === "waiting"

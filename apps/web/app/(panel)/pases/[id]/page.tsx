@@ -6,7 +6,7 @@ import { Badge, Banner, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import { isBookingLabel } from "@/lib/amenities";
-import { formatDateTime, formatRange, personName } from "@/lib/format";
+import { formatDateTime, formatRange, lotLabel, personName } from "@/lib/format";
 import { accessActionLabel, passStatus } from "@/lib/labels";
 import {
   inviteShareUrl,
@@ -15,7 +15,7 @@ import {
   whatsappShareHref,
 } from "@/lib/invite-url";
 import { asOne } from "@/lib/relations";
-import { canManageStructure, requireSession } from "@/lib/session";
+import { canManageStructure, isAdmin, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { CopyLinkButton } from "../copy-link-button";
 import { PassEditForm } from "../pass-edit-form";
@@ -65,14 +65,23 @@ export default async function InvitationDetailPage({
   const live =
     status === "active" || status === "scheduled" || status === "waiting";
   const editable = status !== "revoked";
+  const admin = isAdmin(session);
+  const property = asOne<{
+    lot_number: string | null;
+    street_name: string | null;
+  }>(invitation.properties);
 
   return (
     <>
       <Link className={ui.backLink} href="/pases">
         <Icon name="back" size={18} />
-        {canManageStructure(session) ? "Pases" : "Invitados"}
+        {admin ? "Pases" : "Invitados"}
       </Link>
-      <PageHeader title={name} actions={<Badge status={status} />} />
+      <PageHeader
+        kicker={admin ? lotLabel(property ?? {}) : undefined}
+        title={name}
+        actions={<Badge status={status} />}
+      />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
       {flash.updated ? <Banner>Guardado.</Banner> : null}
 

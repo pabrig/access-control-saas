@@ -80,7 +80,7 @@ export async function createAmenityBooking(formData: FormData) {
 
   if (guests.length > 0) {
     const { error: guestsError } = await supabase.from("invitations").insert(
-      guests.map(() => ({
+      guests.map((guestName) => ({
         property_id: property.id,
         neighborhood_id: property.neighborhood_id,
         created_by_user_id: user.id,
@@ -89,7 +89,7 @@ export async function createAmenityBooking(formData: FormData) {
         is_single_use: false,
         status: "DRAFT" as const,
         qr_token: null,
-        guest_name: null,
+        guest_name: guestName,
       })),
     );
 

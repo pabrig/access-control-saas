@@ -4,8 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Nexo - Control de Accesos",
     short_name: "Nexo",
-    description: "Validá el QR en la puerta",
-    start_url: "/scan",
+    description: "Invitá a tu lote y controlá quién entra al barrio",
+    start_url: "/",
     display: "standalone",
     orientation: "portrait",
     background_color: "#0a0a0a",

@@ -26,7 +26,7 @@ function paintTheme(theme: "light" | "dark") {
   window.localStorage.setItem(STORAGE_KEY, theme);
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", theme === "dark" ? "#12110f" : "#f3efe6");
+    ?.setAttribute("content", theme === "dark" ? "#0a0a0a" : "#f5f5f5");
 }
 
 export function ThemeToggle() {

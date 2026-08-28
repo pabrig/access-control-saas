@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/login/actions";
+import { NexoLogo } from "@/components/brand/nexo-logo";
 import { Icon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { roleLabel } from "@/lib/labels";
@@ -72,10 +73,7 @@ export function AppShell({
     >
       <aside className={styles.sidebar}>
         <Link className={styles.brand} href="/">
-          <span className={styles.mark} aria-hidden>
-            A
-          </span>
-          Acceso
+          <NexoLogo />
         </Link>
         <nav className={styles.nav} aria-label="Principal">
           {nav.map((item) => (
@@ -112,7 +110,7 @@ export function AppShell({
       <div className={styles.body}>
         <header className={styles.top}>
           <Link className={styles.brandMobile} href="/">
-            Acceso
+            <NexoLogo />
           </Link>
           <div className={styles.topActions}>
             <ThemeToggle />

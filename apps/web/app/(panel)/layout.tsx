@@ -28,7 +28,7 @@ export default async function PanelLayout({
     : barrio
       ? [
           { href: "/", label: "Inicio" },
-          { href: "/pases", label: "Invitados" },
+          { href: "/pases", label: "Pases" },
           { href: "/reservas", label: "Reservas" },
           { href: "/movimientos", label: "Movimientos" },
           { href: "/lotes", label: "Lotes" },

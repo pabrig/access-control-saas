@@ -98,3 +98,80 @@
   background: var(--input);
   font: inherit;
 }
+
+.attendance {
+  display: grid;
+  gap: 8px;
+}
+
+.attendanceHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.attendanceHead h3 {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.attendanceHead span {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.attendanceEmpty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.people {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.person {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--input);
+}
+
+.person strong {
+  font-size: 14px;
+  letter-spacing: -0.03em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.confirmed,
+.pending {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.confirmed {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.pending {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
