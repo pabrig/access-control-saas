@@ -1,13 +1,15 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { DataTable } from "@/components/data-table";
 import { Banner, Empty, PageHeader, Stat } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import { eventSpaceName, isBookingLabel } from "@/lib/amenities";
 import {
+  formatDate,
   formatDateTime,
-  formatDayHeading,
   formatTime,
+  lotLabel,
   personName,
 } from "@/lib/format";
 import {
@@ -26,6 +28,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { ScopeFilter } from "../scope-filter";
 import ops from "../ops-overview.module.css";
+
+export const dynamic = "force-dynamic";
 
 type Named = { id: string; name: string };
 
@@ -46,6 +50,23 @@ type InvitationRel = {
   neighborhoods: Named | Named[] | null;
 };
 
+type PropertyRel = {
+  id: string;
+  lot_number: string;
+  street_name: string | null;
+  neighborhood_id: string | null;
+  neighborhoods:
+    | (Named & {
+        complex_id?: string | null;
+        complexes?: Named | Named[] | null;
+      })
+    | (Named & {
+        complex_id?: string | null;
+        complexes?: Named | Named[] | null;
+      })[]
+    | null;
+};
+
 type LogRow = {
   id: string;
   action_type: string;
@@ -63,23 +84,34 @@ type LogRow = {
     | { first_name: string; last_name: string }
     | { first_name: string; last_name: string }[]
     | null;
-  properties:
-    | { id: string; lot_number: string }
-    | { id: string; lot_number: string }[]
-    | null;
+  properties: PropertyRel | PropertyRel[] | null;
 };
 
-function placeOf(log: LogRow) {
+type Place = {
+  gateId: string;
+  gateName: string;
+  barrioId: string | null;
+  barrioName: string | null;
+  complexId: string | null;
+  complexName: string | null;
+  lotId: string | null;
+  lotLabel: string | null;
+};
+
+function placeOf(log: LogRow): Place {
   const gate = asOne<GateRel>(log.gates);
   const invitation = asOne<InvitationRel>(log.invitations);
-  const property = asOne<{
-    neighborhood_id?: string | null;
-    neighborhoods?: Named | Named[] | null;
-  }>(log.properties);
-  const complex = asOne<Named>(gate?.complexes);
+  const property = asOne<PropertyRel>(log.properties);
+  const gateComplex = asOne<Named>(gate?.complexes);
   const gateBarrio = asOne<Named>(gate?.neighborhoods);
   const inviteBarrio = asOne<Named>(invitation?.neighborhoods);
-  const propertyBarrio = asOne<Named>(property?.neighborhoods);
+  const propertyBarrio = asOne<
+    Named & {
+      complex_id?: string | null;
+      complexes?: Named | Named[] | null;
+    }
+  >(property?.neighborhoods);
+  const propertyComplex = asOne<Named>(propertyBarrio?.complexes);
   const barrioName =
     inviteBarrio?.name ?? propertyBarrio?.name ?? gateBarrio?.name ?? null;
 
@@ -95,12 +127,24 @@ function placeOf(log: LogRow) {
       gateBarrio?.id ??
       null,
     barrioName,
-    complexId: gate?.complex_id ?? complex?.id ?? null,
-    complexName: complex?.name ?? null,
+    complexId:
+      gate?.complex_id ??
+      gateComplex?.id ??
+      propertyBarrio?.complex_id ??
+      propertyComplex?.id ??
+      null,
+    complexName: gateComplex?.name ?? propertyComplex?.name ?? null,
+    lotId: property?.id ?? null,
+    lotLabel: property
+      ? lotLabel({
+          lot_number: property.lot_number,
+          street_name: property.street_name,
+        })
+      : null,
   };
 }
 
-function placeLine(place: ReturnType<typeof placeOf>, action?: string) {
+function placeLine(place: Place, action?: string) {
   const parts: string[] = [];
   if (action) {
     parts.push(action);
@@ -113,7 +157,20 @@ function placeLine(place: ReturnType<typeof placeOf>, action?: string) {
   ) {
     parts.push(place.barrioName);
   }
+  if (place.complexName) {
+    parts.push(place.complexName);
+  }
   return parts.join(" · ");
+}
+
+function subjectKind(log: LogRow) {
+  if (log.profile_id) {
+    return "Propietario";
+  }
+  if (isBookingLabel(asOne<InvitationRel>(log.invitations)?.guest_name)) {
+    return "Evento";
+  }
+  return "Invitado";
 }
 
 function guestName(log: LogRow) {
@@ -125,9 +182,11 @@ function guestName(log: LogRow) {
     return invitation.guest_name;
   }
 
-  const resident = asOne<{ first_name: string; last_name: string }>(log.resident);
+  const resident = asOne<{ first_name: string; last_name: string }>(
+    log.resident,
+  );
   if (resident) {
-    return `${personName(resident)} (propietario)`;
+    return personName(resident);
   }
 
   return "Invitado";
@@ -135,17 +194,23 @@ function guestName(log: LogRow) {
 
 function MovementFeedItem({ log }: { log: LogRow }) {
   const invitation = asOne<InvitationRel>(log.invitations);
-  const property = asOne<{ id: string; lot_number: string }>(log.properties);
+  const property = asOne<PropertyRel>(log.properties);
+  const place = placeOf(log);
   const exited = isExitAction(log.action_type);
+  const kind = subjectKind(log);
   const content = (
     <>
       <span className={`${ui.feedIcon} ${exited ? ui.feedOut : ""}`}>
         <Icon name={exited ? "exit" : "enter"} size={18} />
       </span>
       <span className={ui.feedBody}>
-        <strong>{guestName(log)}</strong>
+        <strong>
+          {guestName(log)}
+          {kind === "Propietario" ? " · Propietario" : ""}
+        </strong>
         <span className={ui.feedMeta}>
-          {placeLine(placeOf(log), accessActionShort(log.action_type))}
+          {placeLine(place, accessActionShort(log.action_type))}
+          {place.lotLabel ? ` · ${place.lotLabel}` : ""}
         </span>
       </span>
       <span className={ui.feedTime}>{formatTime(log.timestamp)}</span>
@@ -171,50 +236,163 @@ function MovementFeedItem({ log }: { log: LogRow }) {
   return <div className={ui.feedItem}>{content}</div>;
 }
 
+function movementTableRows(rows: LogRow[]) {
+  return rows.map((log) => {
+    const place = placeOf(log);
+    const guard = asOne<{ first_name: string; last_name: string }>(
+      log.profiles,
+    );
+
+    return {
+      id: log.id,
+      date: formatDate(log.timestamp),
+      time: formatTime(log.timestamp),
+      when: formatDateTime(log.timestamp),
+      guest: guestName(log),
+      kind: subjectKind(log),
+      action: accessActionShort(log.action_type),
+      detail: accessActionLabel(log.action_type),
+      gate: place.gateName,
+      barrio: place.barrioName ?? "—",
+      complex: place.complexName ?? "—",
+      lot: place.lotLabel ?? "—",
+      guard: guard ? personName(guard) : "—",
+    };
+  });
+}
+
 export default async function MovimientosPage({
   searchParams,
 }: {
   searchParams: Promise<{
     error?: string;
     updated?: string;
-    registro?: string;
+    resumen?: string;
     grupo?: string;
   }>;
 }) {
+  await connection();
+
   const flash = await searchParams;
   const session = await requireSession();
-  const feedView =
-    (isOwner(session) && !isAdmin(session)) || isNeighborhoodAdmin(session);
+  const ownerOnly = isOwner(session) && !isAdmin(session);
+  const barrioAdmin = isNeighborhoodAdmin(session);
   const structureAdmin = canManageStructure(session);
   const supabase = await createClient();
-  const { data: logs } = await supabase
+  const { data: logs, error: logsError } = await supabase
     .from("access_logs")
     .select(
-      "id, action_type, timestamp, invitation_id, profile_id, property_id, gates(id, name, type, complex_id, neighborhood_id, complexes(id, name), neighborhoods(id, name)), invitations(id, guest_name, neighborhood_id, neighborhoods(id, name)), profiles!access_logs_security_user_id_fkey(first_name, last_name), resident:profiles!access_logs_profile_id_fkey(first_name, last_name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name))",
+      "id, action_type, timestamp, invitation_id, profile_id, property_id, gates(id, name, type, complex_id, neighborhood_id, complexes(id, name), neighborhoods(id, name)), invitations(id, guest_name, neighborhood_id, neighborhoods(id, name)), profiles!access_logs_security_user_id_fkey(first_name, last_name), resident:profiles!access_logs_profile_id_fkey(first_name, last_name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name, complex_id, complexes(id, name)))",
     )
     .order("timestamp", { ascending: false })
     .limit(200);
 
   const rows = (logs ?? []) as LogRow[];
+  const queryError = logsError?.message
+    ? `No se pudieron cargar movimientos: ${logsError.message}`
+    : flash.error;
 
-  if (feedView) {
+  if (ownerOnly || barrioAdmin) {
     return (
-      <FeedLogs
+      <OwnerMovimientos
         rows={rows}
-        flash={flash}
-        neighborhood={isNeighborhoodAdmin(session)}
+        flash={{ ...flash, error: queryError }}
+        title="Movimientos"
+        description={
+          ownerOnly
+            ? "Entradas y salidas de tu lote: invitados y propietarios."
+            : "Entradas y salidas del barrio: invitados y propietarios."
+        }
       />
     );
   }
 
-  if (structureAdmin && flash.registro !== "1") {
-    return <OpsMovimientos rows={rows} grupo={flash.grupo} />;
+  if (structureAdmin && flash.resumen === "1") {
+    return (
+      <OpsMovimientos
+        rows={rows}
+        grupo={flash.grupo}
+        error={queryError}
+      />
+    );
   }
 
-  return <GuardBook rows={rows} back={structureAdmin} grupo={flash.grupo} />;
+  return (
+    <GuardBook
+      rows={rows}
+      showResumenLink={structureAdmin}
+      grupo={flash.grupo}
+      error={queryError}
+    />
+  );
 }
 
-function OpsMovimientos({ rows, grupo }: { rows: LogRow[]; grupo?: string }) {
+function OwnerMovimientos({
+  rows,
+  flash,
+  title,
+  description,
+}: {
+  rows: LogRow[];
+  flash: { error?: string; updated?: string };
+  title: string;
+  description: string;
+}) {
+  const tableRows = movementTableRows(rows);
+  const entries = rows.filter((log) => !isExitAction(log.action_type)).length;
+  const exits = rows.filter((log) => isExitAction(log.action_type)).length;
+  const ownerEntries = rows.filter((log) => log.profile_id).length;
+
+  return (
+    <>
+      <PageHeader title={title} description={description} />
+      {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
+      {flash.updated ? <Banner>Guardado.</Banner> : null}
+
+      <section className={ui.stats} aria-label="Resumen">
+        <Stat label="Registros" value={rows.length} />
+        <Stat label="Entradas" value={entries} />
+        <Stat label="Salidas" value={exits} />
+        <Stat label="Propietario" value={ownerEntries} />
+      </section>
+
+      {tableRows.length === 0 ? (
+        <Empty
+          title="Todavía no hay movimientos"
+          description="Cuando alguien entre o salga por la barrera, el detalle aparece acá."
+        />
+      ) : (
+        <DataTable
+          filename="movimientos.csv"
+          pageSize={15}
+          rows={tableRows}
+          searchPlaceholder="Filtrar por persona, barrera, barrio o lote"
+          columns={[
+            { key: "date", header: "Fecha" },
+            { key: "time", header: "Hora" },
+            { key: "guest", header: "Quién" },
+            { key: "kind", header: "Tipo" },
+            { key: "action", header: "Movimiento" },
+            { key: "gate", header: "Barrera" },
+            { key: "barrio", header: "Barrio" },
+            { key: "complex", header: "Complejo" },
+            { key: "lot", header: "Lote" },
+          ]}
+        />
+      )}
+    </>
+  );
+}
+
+function OpsMovimientos({
+  rows,
+  grupo,
+  error,
+}: {
+  rows: LogRow[];
+  grupo?: string;
+  error?: string;
+}) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const today = rows.filter((log) => new Date(log.timestamp) >= start);
@@ -285,22 +463,21 @@ function OpsMovimientos({ rows, grupo }: { rows: LogRow[]; grupo?: string }) {
   }));
   const independents = today.filter((log) => !placeOf(log).complexId).length;
   const preview = scopedToday.slice(0, 6);
-  const registroHref = grupo
-    ? `/movimientos?registro=1&grupo=${grupo}`
-    : "/movimientos?registro=1";
+  const tableHref = grupo ? `/movimientos?grupo=${grupo}` : "/movimientos";
 
   return (
     <div className={ops.board}>
       <PageHeader
         kicker="Operación"
-        title="Libro de guardia"
-        description="Qué barrera y a qué barrio. El registro completo queda para revisar."
+        title="Resumen"
+        description="Qué barrera y a qué barrio. El detalle está en la tabla."
         actions={
-          <Link className={ops.quietLink} href={registroHref}>
-            Ver registro completo
+          <Link className={ops.quietLink} href={tableHref}>
+            Ver tabla
           </Link>
         }
       />
+      {error ? <Banner tone="danger">{error}</Banner> : null}
 
       <section className={ui.stats} aria-label="Movimientos de hoy">
         <Stat label="Hoy" value={scopedToday.length} />
@@ -358,7 +535,7 @@ function OpsMovimientos({ rows, grupo }: { rows: LogRow[]; grupo?: string }) {
         <section>
           <div className={ui.sectionHead}>
             <h2>Últimos de hoy</h2>
-            <Link href={registroHref}>Registro</Link>
+            <Link href={tableHref}>Tabla</Link>
           </div>
           <ul className={ui.feed}>
             {preview.map((log) => (
@@ -375,12 +552,14 @@ function OpsMovimientos({ rows, grupo }: { rows: LogRow[]; grupo?: string }) {
 
 function GuardBook({
   rows,
-  back,
+  showResumenLink,
   grupo,
+  error,
 }: {
   rows: LogRow[];
-  back: boolean;
+  showResumenLink: boolean;
   grupo?: string;
+  error?: string;
 }) {
   const scoped =
     grupo === "independent"
@@ -388,57 +567,63 @@ function GuardBook({
       : grupo
         ? rows.filter((log) => placeOf(log).complexId === grupo)
         : rows;
-  const tableRows = scoped.map((log) => {
-    const place = placeOf(log);
-    const guard = asOne<{ first_name: string; last_name: string }>(
-      log.profiles,
-    );
-
-    return {
-      id: log.id,
-      guest: guestName(log),
-      action: accessActionLabel(log.action_type),
-      gate: place.gateName,
-      barrio: place.barrioName ?? "—",
-      guard: guard ? personName(guard) : "—",
-      when: formatDateTime(log.timestamp),
-    };
-  });
+  const tableRows = movementTableRows(scoped);
+  const resumenHref = grupo
+    ? `/movimientos?resumen=1&grupo=${grupo}`
+    : "/movimientos?resumen=1";
 
   return (
     <>
-      {back ? (
-        <Link
-          className={ui.backLink}
-          href={grupo ? `/movimientos?grupo=${grupo}` : "/movimientos"}
-        >
-          <Icon name="back" size={18} />
-          Libro de guardia
-        </Link>
-      ) : null}
       <PageHeader
-        kicker="Historial"
-        title={back ? "Registro completo" : "Libro de guardia"}
-        description="Entradas y salidas con barrera y barrio."
+        title="Movimientos"
+        description="Entradas y salidas con barrera, barrio y complejo."
+        actions={
+          showResumenLink ? (
+            <Link className={ops.quietLink} href={resumenHref}>
+              Ver resumen
+            </Link>
+          ) : undefined
+        }
       />
+      {error ? <Banner tone="danger">{error}</Banner> : null}
+
+      <section className={ui.stats} aria-label="Resumen">
+        <Stat label="Registros" value={scoped.length} />
+        <Stat
+          label="Entradas"
+          value={scoped.filter((log) => !isExitAction(log.action_type)).length}
+        />
+        <Stat
+          label="Salidas"
+          value={scoped.filter((log) => isExitAction(log.action_type)).length}
+        />
+        <Stat
+          label="Propietario"
+          value={scoped.filter((log) => log.profile_id).length}
+        />
+      </section>
 
       {tableRows.length === 0 ? (
         <Empty
           title="Todavía no hay movimientos"
-          description="Cuando seguridad escanee una invitación, va a aparecer acá."
+          description="Cuando seguridad escanee un QR, va a aparecer acá."
         />
       ) : (
         <DataTable
-          filename="libro-de-guardia.csv"
+          filename="movimientos.csv"
           pageSize={15}
           rows={tableRows}
-          searchPlaceholder="Filtrar por invitado, barrera, barrio o guardia"
+          searchPlaceholder="Filtrar por persona, barrera, barrio o guardia"
           columns={[
-            { key: "when", header: "Cuando" },
-            { key: "guest", header: "Invitado" },
+            { key: "date", header: "Fecha" },
+            { key: "time", header: "Hora" },
+            { key: "guest", header: "Quién" },
+            { key: "kind", header: "Tipo" },
             { key: "action", header: "Movimiento" },
             { key: "gate", header: "Barrera" },
             { key: "barrio", header: "Barrio" },
+            { key: "complex", header: "Complejo" },
+            { key: "lot", header: "Lote" },
             { key: "guard", header: "Guardia" },
           ]}
         />
@@ -447,48 +632,4 @@ function GuardBook({
   );
 }
 
-function FeedLogs({
-  rows,
-  flash,
-  neighborhood,
-}: {
-  rows: LogRow[];
-  flash: { error?: string; updated?: string };
-  neighborhood: boolean;
-}) {
-  const days: Array<{ heading: string; items: LogRow[] }> = [];
 
-  for (const log of rows) {
-    const heading = formatDayHeading(log.timestamp);
-    const last = days.at(-1);
-    if (last?.heading === heading) {
-      last.items.push(log);
-    } else {
-      days.push({ heading, items: [log] });
-    }
-  }
-
-  return (
-    <>
-      <PageHeader title={neighborhood ? "Movimientos" : "Historial"} />
-      {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
-      {flash.updated ? <Banner>Guardado.</Banner> : null}
-      {days.length === 0 ? (
-        <p className={ui.quiet}>Cuando escaneen un QR, aparece acá.</p>
-      ) : (
-        days.map((day) => (
-          <section key={day.heading}>
-            <h2 className={ui.groupTitle}>{day.heading}</h2>
-            <ul className={ui.feed}>
-              {day.items.map((log) => (
-                <li key={log.id}>
-                  <MovementFeedItem log={log} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
-      )}
-    </>
-  );
-}

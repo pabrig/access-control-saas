@@ -5,6 +5,7 @@ import {
   gateMatchesProperty,
   invitationWindowError,
   shouldRevokeSingleUse,
+  singleUseReentryBlocked,
 } from "./access-rules.js";
 
 const complexId = "10000000-0000-0000-0000-000000000001";
@@ -117,8 +118,17 @@ test("future invitations are not yet valid", () => {
   );
 });
 
-test("single-use revokes only after IN_PROPERTY", () => {
-  assert.equal(shouldRevokeSingleUse(true, "IN_PROPERTY"), true);
+test("single-use revokes only after EXITED", () => {
+  assert.equal(shouldRevokeSingleUse(true, "EXITED"), true);
+  assert.equal(shouldRevokeSingleUse(true, "IN_PROPERTY"), false);
   assert.equal(shouldRevokeSingleUse(true, "IN_COMPLEX"), false);
-  assert.equal(shouldRevokeSingleUse(false, "IN_PROPERTY"), false);
+  assert.equal(shouldRevokeSingleUse(false, "EXITED"), false);
+});
+
+test("single-use blocks a second entry after exit", () => {
+  assert.equal(singleUseReentryBlocked(true, "EXITED", "IN_COMPLEX"), true);
+  assert.equal(singleUseReentryBlocked(true, "EXITED", "IN_PROPERTY"), true);
+  assert.equal(singleUseReentryBlocked(true, "IN_COMPLEX", "EXITED"), false);
+  assert.equal(singleUseReentryBlocked(true, null, "IN_COMPLEX"), false);
+  assert.equal(singleUseReentryBlocked(false, "EXITED", "IN_COMPLEX"), false);
 });

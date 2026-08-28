@@ -3,6 +3,7 @@ import {
   gateMatchesInvitation,
   invitationWindowError,
   shouldRevokeSingleUse,
+  singleUseReentryBlocked,
 } from "./access-rules.js";
 import { nextAccessAction, type AccessStatus } from "./access-state.js";
 import { assertGateOperator } from "./gate-auth.js";
@@ -28,7 +29,8 @@ export type ValidateErrorCode =
   | "INVALID_TRANSITION"
   | "INVALID_PLATE"
   | "UNKNOWN_PLATE"
-  | "NOT_READY";
+  | "NOT_READY"
+  | "ALREADY_USED";
 
 export type InvitationVehicle = {
   plateDisplay: string;
@@ -228,6 +230,16 @@ export async function validateAccess(
       ok: false,
       code: "INVALID_TRANSITION",
       message: "This scan is not valid for the current invitation state",
+    };
+  }
+
+  if (
+    singleUseReentryBlocked(invitation.is_single_use, lastStatus, actionType)
+  ) {
+    return {
+      ok: false,
+      code: "ALREADY_USED",
+      message: "This single-use pass already completed one visit",
     };
   }
 

@@ -51,9 +51,25 @@ export function invitationWindowError(
   return null;
 }
 
+export function isEntryAction(actionType: AccessStatus) {
+  return actionType === "IN_COMPLEX" || actionType === "IN_PROPERTY";
+}
+
+/** Single-use: one enter + one exit. Block a second entry after EXITED. */
+export function singleUseReentryBlocked(
+  isSingleUse: boolean,
+  lastStatus: AccessStatus | null,
+  actionType: AccessStatus,
+): boolean {
+  return (
+    isSingleUse && isEntryAction(actionType) && lastStatus === "EXITED"
+  );
+}
+
+/** Revoke after the exit that closes the single visit. */
 export function shouldRevokeSingleUse(
   isSingleUse: boolean,
   actionType: AccessStatus,
 ): boolean {
-  return isSingleUse && actionType === "IN_PROPERTY";
+  return isSingleUse && actionType === "EXITED";
 }

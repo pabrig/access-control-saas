@@ -23,7 +23,7 @@ export default async function PanelLayout({
         { href: "/credencial", label: "Credencial" },
         { href: "/pases", label: "Invitados" },
         { href: "/reservas", label: "Eventos" },
-        { href: "/movimientos", label: "Historial" },
+        { href: "/movimientos", label: "Movimientos" },
         { href: "/lotes", label: "Mi lote" },
       ]
     : barrio
@@ -40,7 +40,7 @@ export default async function PanelLayout({
       : [
           { href: "/", label: "Inicio" },
           { href: "/pases", label: "Pases" },
-          { href: "/movimientos", label: "Libro de guardia" },
+          { href: "/movimientos", label: "Movimientos" },
           {
             href: "/lotes",
             label:
