@@ -316,6 +316,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string;
+          email: string | null;
           first_name: string;
           id: string;
           is_active: boolean;
@@ -323,6 +324,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          email?: string | null;
           first_name: string;
           id: string;
           is_active?: boolean;
@@ -330,6 +332,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          email?: string | null;
           first_name?: string;
           id?: string;
           is_active?: boolean;
@@ -479,6 +482,28 @@ export type Database = {
     };
     Functions: {
       active_shift_gate_ids: { Args: never; Returns: string[] };
+      admin_create_person: {
+        Args: {
+          p_complex_id: string | null;
+          p_email: string;
+          p_first_name: string;
+          p_last_name: string;
+          p_neighborhood_id: string | null;
+          p_password: string;
+          p_property_id: string | null;
+          p_role: Database["public"]["Enums"]["role"];
+        };
+        Returns: string;
+      };
+      admin_may_assign_role: {
+        Args: {
+          p_complex_id: string | null;
+          p_neighborhood_id: string | null;
+          p_property_id: string | null;
+          p_role: Database["public"]["Enums"]["role"];
+        };
+        Returns: boolean;
+      };
       claim_invite: {
         Args: {
           p_guest_dni: string | null;
@@ -491,7 +516,11 @@ export type Database = {
           qr_token: string;
         }[];
       };
+      is_complex_admin: { Args: never; Returns: boolean };
+      is_independent_neighborhood_admin: { Args: never; Returns: boolean };
+      is_neighborhood_admin: { Args: never; Returns: boolean };
       is_superadmin: { Args: never; Returns: boolean };
+      is_tenant_admin: { Args: never; Returns: boolean };
       managed_complex_ids: { Args: never; Returns: string[] };
       managed_neighborhood_ids: { Args: never; Returns: string[] };
       owned_property_ids: { Args: never; Returns: string[] };

@@ -15,7 +15,17 @@ export default async function LoginPage({
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/");
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || profile.is_active !== false) {
+      redirect("/");
+    }
+
+    await supabase.auth.signOut();
   }
 
   const { error } = await searchParams;

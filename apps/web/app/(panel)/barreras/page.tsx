@@ -122,7 +122,11 @@ export default async function BarrerasPage({
       {(gates ?? []).length === 0 ? (
         <Empty
           title="No hay barreras"
-          description="Creá la principal del complejo para que seguridad pueda escanear."
+          description={
+            barrio
+              ? "Creá la barrera de tu barrio para que seguridad pueda escanear."
+              : "Creá la principal del complejo para que seguridad pueda escanear."
+          }
         />
       ) : (
         <ul className={ui.stack} style={{ marginTop: 16 }}>

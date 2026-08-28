@@ -33,6 +33,8 @@ export default async function PanelLayout({
           { href: "/movimientos", label: "Movimientos" },
           { href: "/lotes", label: "Lotes" },
           { href: "/personas", label: "Personas" },
+          { href: "/barreras", label: "Barreras" },
+          { href: "/turnos", label: "Turnos" },
         ]
       : [
           { href: "/", label: "Inicio" },
