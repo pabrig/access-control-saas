@@ -10,11 +10,12 @@ import {
 } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { createNeighborhood } from "../../lotes/actions";
+import { BarrioFields } from "../barrio-fields";
 
 export default async function NuevoBarrioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; complejo?: string }>;
 }) {
   const flash = await searchParams;
   const session = await requireAdmin();
@@ -32,53 +33,40 @@ export default async function NuevoBarrioPage({
   const managedComplexIds = session.roles
     .filter((row) => row.role === "COMPLEX_ADMIN" && row.complex_id)
     .map((row) => row.complex_id as string);
-  const hiddenComplexId =
-    managedComplexIds[0] ??
-    ((complexes ?? []).length === 1 ? (complexes ?? [])[0]?.id : null);
+  const superadmin = isSuperadmin(session);
+  const hiddenComplexId = superadmin
+    ? null
+    : (managedComplexIds[0] ??
+      ((complexes ?? []).length === 1 ? (complexes ?? [])[0]?.id : null) ??
+      null);
+  const defaultComplexId = hiddenComplexId ?? flash.complejo ?? null;
+  const backHref = flash.complejo ? `/complejos/${flash.complejo}` : "/lotes";
 
   return (
     <>
-      <Link className={ui.backLink} href="/lotes">
+      <Link className={ui.backLink} href={backHref}>
         <Icon name="back" size={18} />
-        Comunidad
+        {flash.complejo ? "Complejo" : "Comunidad"}
       </Link>
       <PageHeader
         kicker="Comunidad"
         title="Nuevo barrio"
-        description="El barrio queda en tu complejo. Después cargás los lotes adentro."
+        description={
+          superadmin
+            ? "El barrio puede quedar suelto o dentro de un complejo. Después cargás los lotes."
+            : "El barrio queda en tu complejo. Después cargás los lotes adentro."
+        }
       />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
       <section className={ui.card}>
         <form action={createNeighborhood} className={ui.form}>
-          {hiddenComplexId ? (
-            <input type="hidden" name="complex_id" value={hiddenComplexId} />
-          ) : (complexes ?? []).length > 1 ? (
-            <label>
-              Complejo
-              <select name="complex_id" required defaultValue="">
-                <option value="" disabled>
-                  Elegí el complejo
-                </option>
-                {(complexes ?? []).map((complex) => (
-                  <option key={complex.id} value={complex.id}>
-                    {complex.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : isSuperadmin(session) ? null : (
-            <p className={ui.muted}>No hay un complejo asignado a tu rol.</p>
-          )}
-          <label>
-            Nombre del barrio
-            <input
-              name="name"
-              required
-              maxLength={80}
-              placeholder="Ej. Los Robles"
-            />
-          </label>
+          <BarrioFields
+            complexes={complexes ?? []}
+            hiddenComplexId={hiddenComplexId}
+            superadmin={superadmin}
+            defaultComplexId={defaultComplexId ?? null}
+          />
           <button className={ui.button} type="submit">
             Crear barrio
           </button>

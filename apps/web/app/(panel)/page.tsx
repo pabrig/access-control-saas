@@ -7,12 +7,7 @@ import { formatRange, formatTime, initials } from "@/lib/format";
 import { accessActionShort, isExitAction, passStatus } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
 import { CommunityHome } from "./community-home";
-import {
-  isAdmin,
-  isOwner,
-  isSecurity,
-  requireSession,
-} from "@/lib/session";
+import { isAdmin, isOwner, isSecurity, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {

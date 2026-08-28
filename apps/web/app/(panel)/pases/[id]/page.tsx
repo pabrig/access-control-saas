@@ -15,10 +15,11 @@ import {
   whatsappShareHref,
 } from "@/lib/invite-url";
 import { asOne } from "@/lib/relations";
+import { canManageStructure, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { CopyLinkButton } from "../copy-link-button";
 import { PassEditForm } from "../pass-edit-form";
-import { revokeInvitation } from "../actions";
+import { deleteInvitation, revokeInvitation } from "../actions";
 import styles from "../pases.module.css";
 
 export default async function InvitationDetailPage({
@@ -31,6 +32,7 @@ export default async function InvitationDetailPage({
   const { id } = await params;
   const flash = await searchParams;
   const origin = await publicAppUrl();
+  const session = await requireSession();
   const supabase = await createClient();
 
   const { data: invitation } = await supabase
@@ -68,7 +70,7 @@ export default async function InvitationDetailPage({
     <>
       <Link className={ui.backLink} href="/pases">
         <Icon name="back" size={18} />
-        Invitados
+        {canManageStructure(session) ? "Pases" : "Invitados"}
       </Link>
       <PageHeader title={name} actions={<Badge status={status} />} />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
@@ -198,6 +200,15 @@ export default async function InvitationDetailPage({
             <input type="hidden" name="id" value={invitation.id} />
             <button className={ui.buttonDanger} type="submit">
               Cancelar
+            </button>
+          </form>
+        ) : null}
+
+        {canManageStructure(session) ? (
+          <form action={deleteInvitation} className={styles.cancel}>
+            <input type="hidden" name="id" value={invitation.id} />
+            <button className={ui.buttonDanger} type="submit">
+              Eliminar pase
             </button>
           </form>
         ) : null}

@@ -105,10 +105,7 @@ function asNamed(value: unknown) {
   return row as { name?: string; guest_name?: string };
 }
 
-function lotLine(identity: {
-  lotNumber: string;
-  streetName: string | null;
-}) {
+function lotLine(identity: { lotNumber: string; streetName: string | null }) {
   const lot = identity.lotNumber ? `Lote ${identity.lotNumber}` : "Lote";
   return identity.streetName ? `${identity.streetName} · ${lot}` : lot;
 }
@@ -386,9 +383,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
       </p>
       <h1>{identity?.guestName ?? "En la puerta"}</h1>
       <p className={styles.lead}>
-        {identity
-          ? lotLine(identity)
-          : "Escaneá el QR o buscá quién entra."}
+        {identity ? lotLine(identity) : "Escaneá el QR o buscá quién entra."}
       </p>
       <p className={styles.status} role="status">
         <span className={gate ? styles.live : styles.offline} />
@@ -401,7 +396,9 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
             <p className={styles.identityMeta}>DNI {identity.guestDni}</p>
           ) : null}
           {identity.matchedPlate ? (
-            <p className={styles.identityMeta}>Patente {identity.matchedPlate}</p>
+            <p className={styles.identityMeta}>
+              Patente {identity.matchedPlate}
+            </p>
           ) : null}
           {identity.vehicles.length > 0 ? (
             <ul className={styles.party}>
@@ -425,7 +422,9 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
             </ul>
           ) : null}
           <button
-            className={outcome.out ? `${styles.approve} ${styles.out}` : styles.approve}
+            className={
+              outcome.out ? `${styles.approve} ${styles.out}` : styles.approve
+            }
             type="button"
             disabled={busy}
             onClick={() => void approve()}
@@ -448,10 +447,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
       ) : (
         <>
           {cameraOn && gate ? (
-            <QrCamera
-              active={!busy}
-              onCode={(code) => void previewQr(code)}
-            />
+            <QrCamera active={!busy} onCode={(code) => void previewQr(code)} />
           ) : null}
 
           <form

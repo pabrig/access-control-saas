@@ -8,13 +8,14 @@ import { asOne } from "@/lib/relations";
 import { isAdmin, isNeighborhoodAdmin, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { loadResidentsByLot } from "../residents";
+import { deleteProperty } from "../actions";
 
 export default async function LoteFichaPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ created?: string }>;
+  searchParams: Promise<{ created?: string; error?: string }>;
 }) {
   const { id } = await params;
   const flash = await searchParams;
@@ -68,6 +69,7 @@ export default async function LoteFichaPage({
         }
       />
       {flash.created ? <Banner>Lote guardado.</Banner> : null}
+      {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
       <section className={ui.card}>
         <dl className={ui.form}>
@@ -97,6 +99,22 @@ export default async function LoteFichaPage({
           ) : null}
         </dl>
       </section>
+
+      {admin ? (
+        <section className={ui.card} style={{ marginTop: 24 }}>
+          <h2>Eliminar lote</h2>
+          <p className={ui.muted}>
+            No se puede borrar si todavía tiene pases. Cancelalos o eliminalos
+            antes.
+          </p>
+          <form action={deleteProperty}>
+            <input type="hidden" name="id" value={property.id} />
+            <button className={ui.buttonDanger} type="submit">
+              Eliminar lote
+            </button>
+          </form>
+        </section>
+      ) : null}
     </>
   );
 }

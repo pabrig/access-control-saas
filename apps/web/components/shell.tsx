@@ -49,7 +49,7 @@ export function AppShell({
 
   function isActive(href: string) {
     if (href === "/") {
-      return pathname === "/";
+      return pathname === "/" || pathname.startsWith("/complejos");
     }
     if (href === "/lotes") {
       return (

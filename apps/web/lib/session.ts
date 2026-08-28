@@ -69,8 +69,28 @@ export function isSuperadmin(session: Session) {
   return hasRole(session, "SUPERADMIN");
 }
 
+export function isComplexAdmin(session: Session) {
+  return primaryRole(session) === "COMPLEX_ADMIN";
+}
+
 export function canCreateNeighborhood(session: Session) {
   return hasRole(session, "SUPERADMIN", "COMPLEX_ADMIN");
+}
+
+export function canManageStructure(session: Session) {
+  return isSuperadmin(session) || isComplexAdmin(session);
+}
+
+export function managedComplexIds(session: Session) {
+  return session.roles
+    .filter((row) => row.role === "COMPLEX_ADMIN" && row.complex_id)
+    .map((row) => row.complex_id as string);
+}
+
+export function canManageComplex(session: Session, complexId: string) {
+  return (
+    isSuperadmin(session) || managedComplexIds(session).includes(complexId)
+  );
 }
 
 export function canAssignResidents(session: Session) {

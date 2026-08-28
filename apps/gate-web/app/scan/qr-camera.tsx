@@ -109,15 +109,11 @@ export function QrCamera({
       } catch (error) {
         const name = error instanceof DOMException ? error.name : "";
         if (name === "NotAllowedError") {
-          setStatus(
-            "Negaste la cámara. Activalo en Ajustes del navegador.",
-          );
+          setStatus("Negaste la cámara. Activalo en Ajustes del navegador.");
         } else if (name === "NotFoundError") {
           setStatus("No hay una cámara disponible en este dispositivo.");
         } else {
-          setStatus(
-            "No se pudo abrir la cámara. Usá el buscador o HTTPS.",
-          );
+          setStatus("No se pudo abrir la cámara. Usá el buscador o HTTPS.");
         }
         return;
       }

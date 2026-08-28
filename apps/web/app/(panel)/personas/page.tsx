@@ -147,56 +147,56 @@ export default async function PersonasPage({
           {people.map((person) => {
             return (
               <li className={ui.card} key={person.id}>
-              <div className={ui.person}>
-                <span className={ui.avatar} aria-hidden>
-                  {initials(personName(person))}
-                </span>
-                <div>
-                  <h2>{personName(person)}</h2>
-                  <p className={ui.muted}>
-                    {person.is_active ? "Activa" : "Inactiva"}
-                  </p>
+                <div className={ui.person}>
+                  <span className={ui.avatar} aria-hidden>
+                    {initials(personName(person))}
+                  </span>
+                  <div>
+                    <h2>{personName(person)}</h2>
+                    <p className={ui.muted}>
+                      {person.is_active ? "Activa" : "Inactiva"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              {person.roles.length === 0 ? (
-                <p className={ui.muted}>
-                  {superadmin
-                    ? "Sin rol asignado."
-                    : "El rol de esta persona no está en tu alcance."}
-                </p>
-              ) : (
-                <ul className={ui.list}>
-                  {person.roles.map((row) => {
-                    const scope =
-                      (row.property_id &&
-                        propertyById.get(row.property_id) &&
-                        lotLabel(propertyById.get(row.property_id)!)) ||
-                      (row.neighborhood_id &&
-                        neighborhoodById.get(row.neighborhood_id)?.name) ||
-                      (row.complex_id &&
-                        complexById.get(row.complex_id)?.name) ||
-                      "Toda la plataforma";
+                {person.roles.length === 0 ? (
+                  <p className={ui.muted}>
+                    {superadmin
+                      ? "Sin rol asignado."
+                      : "El rol de esta persona no está en tu alcance."}
+                  </p>
+                ) : (
+                  <ul className={ui.list}>
+                    {person.roles.map((row) => {
+                      const scope =
+                        (row.property_id &&
+                          propertyById.get(row.property_id) &&
+                          lotLabel(propertyById.get(row.property_id)!)) ||
+                        (row.neighborhood_id &&
+                          neighborhoodById.get(row.neighborhood_id)?.name) ||
+                        (row.complex_id &&
+                          complexById.get(row.complex_id)?.name) ||
+                        "Toda la plataforma";
 
-                    return (
-                      <li className={ui.row} key={row.id}>
-                        <div>
-                          <strong>{ROLE_LABEL[row.role as Role]}</strong>
-                          <p className={ui.muted}>{scope}</p>
-                        </div>
-                        {superadmin ? (
-                          <form action={removeRole}>
-                            <input type="hidden" name="id" value={row.id} />
-                            <button className={ui.buttonDanger} type="submit">
-                              Quitar
-                            </button>
-                          </form>
-                        ) : null}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </li>
+                      return (
+                        <li className={ui.row} key={row.id}>
+                          <div>
+                            <strong>{ROLE_LABEL[row.role as Role]}</strong>
+                            <p className={ui.muted}>{scope}</p>
+                          </div>
+                          {superadmin ? (
+                            <form action={removeRole}>
+                              <input type="hidden" name="id" value={row.id} />
+                              <button className={ui.buttonDanger} type="submit">
+                                Quitar
+                              </button>
+                            </form>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </li>
             );
           })}
         </ul>

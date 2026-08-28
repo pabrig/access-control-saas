@@ -20,7 +20,8 @@ type IconName =
   | "qr"
   | "enter"
   | "exit"
-  | "pin";
+  | "pin"
+  | "more";
 
 export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   return (
@@ -147,6 +148,13 @@ const ICONS: Record<IconName, ReactNode> = {
     <>
       <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
       <circle cx="12" cy="10" r="2.2" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.4" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.4" fill="currentColor" />
     </>
   ),
 };

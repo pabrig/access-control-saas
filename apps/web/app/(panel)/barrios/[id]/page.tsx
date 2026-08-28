@@ -1,22 +1,31 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Empty, PageHeader, Stat } from "@/components/ui";
+import { Banner, Empty, PageHeader, Stat } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import { asOne } from "@/lib/relations";
-import { isNeighborhoodAdmin, requireAdmin } from "@/lib/session";
+import {
+  canCreateNeighborhood,
+  isNeighborhoodAdmin,
+  requireAdmin,
+} from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { LotCard } from "../../lotes/lot-card";
+import { deleteNeighborhood } from "../../lotes/actions";
 import { loadResidentsByLot, lotCountLabel } from "../../lotes/residents";
 
 export default async function BarrioPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const flash = await searchParams;
   const session = await requireAdmin();
   const barrioAdmin = isNeighborhoodAdmin(session);
+  const canDelete = canCreateNeighborhood(session);
   const supabase = await createClient();
 
   const [{ data: neighborhood }, { data: properties }, residentsByLot] =
@@ -55,15 +64,24 @@ export default async function BarrioPage({
         title={neighborhood.name}
         description="Lotes de este barrio. Tocá uno para ver la ficha."
         actions={
-          <Link
-            className={ui.button}
-            href={`/lotes/nuevo?barrio=${neighborhood.id}`}
-          >
-            <Icon name="plus" size={18} />
-            Nuevo lote
-          </Link>
+          <>
+            <Link
+              className={ui.buttonSecondary}
+              href={`/barrios/${neighborhood.id}/editar`}
+            >
+              Editar
+            </Link>
+            <Link
+              className={ui.button}
+              href={`/lotes/nuevo?barrio=${neighborhood.id}`}
+            >
+              <Icon name="plus" size={18} />
+              Nuevo lote
+            </Link>
+          </>
         }
       />
+      {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
       <section className={ui.stats}>
         <Stat label="Lotes" value={lots.length} />
@@ -93,6 +111,22 @@ export default async function BarrioPage({
           </ul>
         </section>
       )}
+
+      {canDelete ? (
+        <section className={ui.card} style={{ marginTop: 24 }}>
+          <h2>Eliminar barrio</h2>
+          <p className={ui.muted}>
+            Solo si no tiene lotes. Los lotes hay que moverlos o borrarlos
+            antes.
+          </p>
+          <form action={deleteNeighborhood}>
+            <input type="hidden" name="id" value={neighborhood.id} />
+            <button className={ui.buttonDanger} type="submit">
+              Eliminar barrio
+            </button>
+          </form>
+        </section>
+      ) : null}
     </>
   );
 }

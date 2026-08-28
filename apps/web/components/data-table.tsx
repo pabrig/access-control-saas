@@ -55,8 +55,7 @@ export function DataTable<T extends { id: string }>({
       .map((row) =>
         columns
           .map(
-            (column) =>
-              `"${cellValue(row, column.key).replaceAll('"', '""')}"`,
+            (column) => `"${cellValue(row, column.key).replaceAll('"', '""')}"`,
           )
           .join(","),
       )

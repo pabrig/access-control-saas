@@ -40,7 +40,12 @@ export default async function PanelLayout({
           { href: "/movimientos", label: "Libro de guardia" },
           {
             href: "/lotes",
-            label: isOwner(session) && !admin ? "Mi lote" : admin ? "Comunidad" : "Lotes",
+            label:
+              isOwner(session) && !admin
+                ? "Mi lote"
+                : admin
+                  ? "Comunidad"
+                  : "Lotes",
           },
           ...(admin
             ? [

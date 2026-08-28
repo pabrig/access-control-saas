@@ -4,7 +4,7 @@ import { Banner, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import { lotLabel } from "@/lib/format";
-import { requireAdmin } from "@/lib/session";
+import { isNeighborhoodAdmin, requireAdmin } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { updateProperty } from "../../actions";
 import { LotFields } from "../../lot-fields";
@@ -18,13 +18,21 @@ export default async function EditarLotePage({
 }) {
   const { id } = await params;
   const flash = await searchParams;
-  await requireAdmin();
+  const session = await requireAdmin();
+  const barrioAdmin = isNeighborhoodAdmin(session);
   const supabase = await createClient();
-  const { data: property } = await supabase
-    .from("properties")
-    .select("id, lot_number, street_name, block_name, phone, notes")
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data: property }, { data: neighborhoods }] = await Promise.all([
+    supabase
+      .from("properties")
+      .select(
+        "id, lot_number, street_name, block_name, phone, notes, neighborhood_id",
+      )
+      .eq("id", id)
+      .maybeSingle(),
+    barrioAdmin
+      ? Promise.resolve({ data: [] as { id: string; name: string }[] })
+      : supabase.from("neighborhoods").select("id, name").order("name"),
+  ]);
 
   if (!property) {
     notFound();
@@ -46,6 +54,28 @@ export default async function EditarLotePage({
       <section className={ui.card}>
         <form action={updateProperty} className={ui.form}>
           <input type="hidden" name="id" value={property.id} />
+          {barrioAdmin ? (
+            <input
+              type="hidden"
+              name="neighborhood_id"
+              value={property.neighborhood_id}
+            />
+          ) : (
+            <label>
+              Barrio
+              <select
+                name="neighborhood_id"
+                required
+                defaultValue={property.neighborhood_id}
+              >
+                {(neighborhoods ?? []).map((neighborhood) => (
+                  <option key={neighborhood.id} value={neighborhood.id}>
+                    {neighborhood.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <LotFields value={property} />
           <button className={ui.button} type="submit">
             Guardar

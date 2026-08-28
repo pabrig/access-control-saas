@@ -1,17 +1,20 @@
 import Link from "next/link";
 import ui from "@/components/ui.module.css";
 import { lotCountLabel } from "./residents";
+import ops from "../ops-overview.module.css";
 
 export function BarrioCard({
   id,
   name,
   lotCount,
   vacant,
+  flag,
 }: {
   id: string;
   name: string;
   lotCount: number;
   vacant: number;
+  flag?: string | null;
 }) {
   const line = [
     lotCountLabel(lotCount),
@@ -22,8 +25,16 @@ export function BarrioCard({
 
   return (
     <Link className={ui.card} href={`/barrios/${id}`}>
-      <h2>{name}</h2>
+      <div className={ops.cardTop}>
+        <h2>{name}</h2>
+        {flag !== undefined ? (
+          <span className={flag ? ops.flagComplex : ops.flagSolo}>
+            {flag ?? "Independiente"}
+          </span>
+        ) : null}
+      </div>
       <p className={ui.muted}>{line}</p>
+      <span className={ops.cardAction}>Ver lotes</span>
     </Link>
   );
 }

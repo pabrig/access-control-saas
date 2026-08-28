@@ -5,6 +5,7 @@ import {
   assignedNeighborhoodId,
   canAssignResidents,
   canCreateNeighborhood,
+  isAdmin,
   isNeighborhoodAdmin,
   isSuperadmin,
   requireSession,
@@ -73,15 +74,28 @@ export async function createProperty(formData: FormData) {
 }
 
 export async function updateProperty(formData: FormData) {
+  const session = await requireSession();
   const id = String(formData.get("id") ?? "");
   const fields = lotFields(formData);
+  const neighborhoodId = String(formData.get("neighborhood_id") ?? "");
 
   if (!id || !fields.lot_number) {
     fail(id ? `/lotes/${id}/editar` : "/lotes", "El lote necesita un número.");
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("properties").update(fields).eq("id", id);
+  const patch: ReturnType<typeof lotFields> & { neighborhood_id?: string } = {
+    ...fields,
+  };
+
+  if (neighborhoodId && !isNeighborhoodAdmin(session)) {
+    patch.neighborhood_id = neighborhoodId;
+  }
+
+  const { error } = await supabase
+    .from("properties")
+    .update(patch)
+    .eq("id", id);
 
   if (error) {
     fail(`/lotes/${id}/editar`, error.message);
@@ -136,6 +150,128 @@ export async function createNeighborhood(formData: FormData) {
   }
 
   redirect(`/barrios/${data.id}`);
+}
+
+export async function updateNeighborhood(formData: FormData) {
+  const session = await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  let complexId = String(formData.get("complex_id") ?? "") || null;
+
+  if (!id || !name) {
+    fail(
+      id ? `/barrios/${id}/editar` : "/lotes",
+      "El barrio necesita un nombre.",
+    );
+  }
+
+  const patch: { name: string; complex_id?: string | null } = { name };
+
+  if (isSuperadmin(session)) {
+    patch.complex_id = complexId;
+  } else if (canCreateNeighborhood(session)) {
+    const allowed = session.roles
+      .filter((row) => row.role === "COMPLEX_ADMIN" && row.complex_id)
+      .map((row) => row.complex_id as string);
+
+    if (!complexId) {
+      complexId = allowed[0] ?? null;
+    }
+    if (!complexId || !allowed.includes(complexId)) {
+      fail(
+        `/barrios/${id}/editar`,
+        "El barrio tiene que pertenecer a un complejo que administres.",
+      );
+    }
+    patch.complex_id = complexId;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("neighborhoods")
+    .update(patch)
+    .eq("id", id);
+
+  if (error) {
+    fail(`/barrios/${id}/editar`, error.message);
+  }
+
+  redirect(`/barrios/${id}`);
+}
+
+export async function deleteNeighborhood(formData: FormData) {
+  const session = await requireSession();
+  const id = String(formData.get("id") ?? "");
+
+  if (!id) {
+    fail("/lotes", "Barrio inválido.");
+  }
+
+  if (!isSuperadmin(session) && !canCreateNeighborhood(session)) {
+    fail(`/barrios/${id}`, "No podés eliminar este barrio.");
+  }
+
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("neighborhood_id", id);
+
+  if ((count ?? 0) > 0) {
+    fail(`/barrios/${id}`, "Primero eliminá o mové los lotes de este barrio.");
+  }
+
+  const { error } = await supabase.from("neighborhoods").delete().eq("id", id);
+
+  if (error) {
+    fail(`/barrios/${id}`, error.message);
+  }
+
+  redirect("/lotes");
+}
+
+export async function deleteProperty(formData: FormData) {
+  const session = await requireSession();
+  const id = String(formData.get("id") ?? "");
+
+  if (!id) {
+    fail("/lotes", "Lote inválido.");
+  }
+
+  if (!isAdmin(session)) {
+    fail(`/lotes/${id}`, "No podés eliminar este lote.");
+  }
+
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("invitations")
+    .select("id", { count: "exact", head: true })
+    .eq("property_id", id);
+
+  if ((count ?? 0) > 0) {
+    fail(
+      `/lotes/${id}`,
+      "Este lote tiene pases. Cancelalos o eliminalos antes de borrar el lote.",
+    );
+  }
+
+  const { data: property } = await supabase
+    .from("properties")
+    .select("neighborhood_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  const { error } = await supabase.from("properties").delete().eq("id", id);
+
+  if (error) {
+    fail(`/lotes/${id}`, error.message);
+  }
+
+  redirect(
+    property?.neighborhood_id
+      ? `/barrios/${property.neighborhood_id}`
+      : "/lotes",
+  );
 }
 
 export async function assignResident(formData: FormData) {

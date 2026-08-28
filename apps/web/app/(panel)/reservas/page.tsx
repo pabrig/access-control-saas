@@ -217,13 +217,7 @@ function BookingFeedItem({ row }: { row: BookingRow }) {
   );
 }
 
-function EventCard({
-  row,
-  editable,
-}: {
-  row: BookingRow;
-  editable: boolean;
-}) {
+function EventCard({ row, editable }: { row: BookingRow; editable: boolean }) {
   const status = passStatus(row);
 
   return (

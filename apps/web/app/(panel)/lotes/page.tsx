@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Banner, Empty, PageHeader } from "@/components/ui";
+import { Banner, Empty, PageHeader, Stat } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import { asOne } from "@/lib/relations";
 import {
   canCreateNeighborhood,
+  canManageStructure,
   isAdmin,
   isNeighborhoodAdmin,
   requireSession,
@@ -13,6 +14,8 @@ import { createClient } from "@/lib/supabase/server";
 import { LotCard } from "./lot-card";
 import { BarrioCard } from "./barrio-card";
 import { loadResidentsByLot } from "./residents";
+import { ScopeFilter } from "../scope-filter";
+import ops from "../ops-overview.module.css";
 
 export default async function LotesPage({
   searchParams,
@@ -21,6 +24,7 @@ export default async function LotesPage({
     error?: string;
     created?: string;
     barrio?: string;
+    grupo?: string;
   }>;
 }) {
   const flash = await searchParams;
@@ -28,35 +32,33 @@ export default async function LotesPage({
   const admin = isAdmin(session);
   const barrioAdmin = isNeighborhoodAdmin(session);
   const createBarrio = canCreateNeighborhood(session);
+  const structureAdmin = canManageStructure(session);
   const showBarrios = admin && !barrioAdmin;
   const supabase = await createClient();
 
-  const [
-    { data: properties, error },
-    { data: neighborhoods },
-    residentsByLot,
-  ] = await Promise.all([
-    supabase
-      .from("properties")
-      .select(
-        "id, lot_number, street_name, neighborhood_id, block_name, phone, neighborhoods(name)",
-      )
-      .order("lot_number"),
-    showBarrios
-      ? supabase
-          .from("neighborhoods")
-          .select("id, name, complex_id, complexes(name)")
-          .order("name")
-      : Promise.resolve({
-          data: [] as {
-            id: string;
-            name: string;
-            complex_id: string | null;
-            complexes: { name: string } | { name: string }[] | null;
-          }[],
-        }),
-    loadResidentsByLot(),
-  ]);
+  const [{ data: properties, error }, { data: neighborhoods }, residentsByLot] =
+    await Promise.all([
+      supabase
+        .from("properties")
+        .select(
+          "id, lot_number, street_name, neighborhood_id, block_name, phone, neighborhoods(name)",
+        )
+        .order("lot_number"),
+      showBarrios
+        ? supabase
+            .from("neighborhoods")
+            .select("id, name, complex_id, complexes(name)")
+            .order("name")
+        : Promise.resolve({
+            data: [] as {
+              id: string;
+              name: string;
+              complex_id: string | null;
+              complexes: { name: string } | { name: string }[] | null;
+            }[],
+          }),
+      loadResidentsByLot(),
+    ]);
 
   const lots = properties ?? [];
   const barrioCards = (neighborhoods ?? []).map((neighborhood) => {
@@ -78,36 +80,63 @@ export default async function LotesPage({
     };
   });
 
-  const complexNames = [
-    ...new Set(
+  const groups = [
+    ...new Map(
       barrioCards
-        .map((card) => card.complexName)
-        .filter((name): name is string => Boolean(name)),
-    ),
-  ];
-  const groupByComplex = showBarrios && complexNames.length > 1;
+        .filter((card) => card.complexId && card.complexName)
+        .map((card) => [
+          card.complexId as string,
+          {
+            id: card.complexId as string,
+            name: card.complexName as string,
+            count: 0,
+          },
+        ]),
+    ).values(),
+  ].map((group) => ({
+    ...group,
+    count: barrioCards.filter((card) => card.complexId === group.id).length,
+  }));
+  const independents = barrioCards.filter((card) => !card.complexId).length;
+  const visibleBarrios =
+    flash.grupo === "independent"
+      ? barrioCards.filter((card) => !card.complexId)
+      : flash.grupo
+        ? barrioCards.filter((card) => card.complexId === flash.grupo)
+        : barrioCards;
+  const vacantTotal = barrioCards.reduce((sum, card) => sum + card.vacant, 0);
+  const showFlags =
+    groups.length > 0 && (groups.length > 1 || independents > 0);
 
   return (
     <>
       <PageHeader
-        kicker={showBarrios && complexNames.length === 1 ? complexNames[0] : "Comunidad"}
+        kicker="Estructura"
         title={barrioAdmin ? "Lotes" : admin ? "Comunidad" : "Mi lote"}
         description={
           barrioAdmin
             ? "Padrón de tu barrio. Tocá un lote para ver la ficha."
-            : showBarrios
-              ? "Barrios del complejo. Entrá a uno para ver sus lotes."
-              : "Este es el lote desde el que invitás a entrar."
+            : structureAdmin
+              ? "Directorio de barrios. Entrá a uno para ver y editar sus lotes."
+              : showBarrios
+                ? "Barrios del complejo. Entrá a uno para ver sus lotes."
+                : "Este es el lote desde el que invitás a entrar."
         }
         actions={
           admin ? (
             <>
               {createBarrio ? (
-                <Link className={ui.buttonSecondary} href="/barrios/nuevo">
+                <Link
+                  className={structureAdmin ? ui.button : ui.buttonSecondary}
+                  href="/barrios/nuevo"
+                >
                   Nuevo barrio
                 </Link>
               ) : null}
-              <Link className={ui.button} href="/lotes/nuevo">
+              <Link
+                className={structureAdmin ? ui.buttonSecondary : ui.button}
+                href="/lotes/nuevo"
+              >
                 <Icon name="plus" size={18} />
                 Nuevo lote
               </Link>
@@ -133,43 +162,40 @@ export default async function LotesPage({
                 : "Cuando haya un barrio asignado, acá vas a ver el padrón."
             }
           />
-        ) : groupByComplex ? (
-          complexNames.map((complexName) => (
-            <section key={complexName}>
-              <h2 className={ui.groupTitle}>{complexName}</h2>
-              <ul className={ui.list}>
-                {barrioCards
-                  .filter((card) => card.complexName === complexName)
-                  .map((card) => (
-                    <li key={card.id}>
-                      <BarrioCard
-                        id={card.id}
-                        name={card.name}
-                        lotCount={card.lotCount}
-                        vacant={card.vacant}
-                      />
-                    </li>
-                  ))}
-              </ul>
-            </section>
-          ))
         ) : (
-          <ul className={ui.list}>
-            {barrioCards.map((card) => (
-              <li key={card.id}>
-                <BarrioCard
-                  id={card.id}
-                  name={card.name}
-                  lotCount={card.lotCount}
-                  vacant={card.vacant}
-                />
-              </li>
-            ))}
-          </ul>
+          <div className={ops.board}>
+            {structureAdmin ? (
+              <section className={ui.stats} aria-label="Resumen de comunidad">
+                <Stat label="Barrios" value={barrioCards.length} />
+                <Stat label="Lotes" value={lots.length} />
+                <Stat label="Sin residente" value={vacantTotal} />
+              </section>
+            ) : null}
+            {structureAdmin ? (
+              <ScopeFilter groups={groups} independents={independents} />
+            ) : null}
+            <ul className={structureAdmin ? ops.cards : ui.list}>
+              {visibleBarrios.map((card) => (
+                <li key={card.id}>
+                  <BarrioCard
+                    id={card.id}
+                    name={card.name}
+                    lotCount={card.lotCount}
+                    vacant={card.vacant}
+                    flag={
+                      structureAdmin && showFlags ? card.complexName : undefined
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         )
       ) : lots.length === 0 ? (
         <Empty
-          title={admin ? "No hay lotes en tu barrio" : "No hay lotes en tu alcance"}
+          title={
+            admin ? "No hay lotes en tu barrio" : "No hay lotes en tu alcance"
+          }
           description={
             admin
               ? "Cargá el primer lote para armar el padrón."
@@ -179,7 +205,9 @@ export default async function LotesPage({
       ) : (
         <ul className={ui.list}>
           {lots.map((property) => {
-            const neighborhood = asOne<{ name: string }>(property.neighborhoods);
+            const neighborhood = asOne<{ name: string }>(
+              property.neighborhoods,
+            );
 
             return (
               <li key={property.id}>
@@ -197,4 +225,3 @@ export default async function LotesPage({
     </>
   );
 }
-

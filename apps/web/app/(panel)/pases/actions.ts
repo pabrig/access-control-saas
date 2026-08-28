@@ -208,3 +208,21 @@ export async function updateInvitation(formData: FormData) {
 
   redirect(`${destination(next)}?updated=1`);
 }
+
+export async function deleteInvitation(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const next = String(formData.get("next") ?? "/pases");
+
+  if (!id) {
+    fail("Invitación inválida.", next);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("invitations").delete().eq("id", id);
+
+  if (error) {
+    fail(error.message, next);
+  }
+
+  redirect("/pases");
+}
