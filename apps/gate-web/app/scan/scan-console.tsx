@@ -340,7 +340,10 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
           qrToken,
           profileId: payload.owner.profileId,
           propertyId: payload.owner.propertyId,
-          guestName: personName(payload.owner.firstName, payload.owner.lastName),
+          guestName: personName(
+            payload.owner.firstName,
+            payload.owner.lastName,
+          ),
           guestDni: null,
           lotNumber: payload.owner.lotNumber,
           streetName: payload.owner.streetName,
@@ -577,7 +580,9 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
                     onClick={() => void previewQr(match.qrToken)}
                   >
                     <strong>
-                      {match.kind === "owner" ? match.ownerName : match.guestName}
+                      {match.kind === "owner"
+                        ? match.ownerName
+                        : match.guestName}
                     </strong>
                     <span>
                       {match.kind === "owner" ? "Propietario · " : ""}

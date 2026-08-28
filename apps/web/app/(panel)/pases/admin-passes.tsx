@@ -164,14 +164,12 @@ export function AdminPasses({
   const pastLots = scoped.filter((lot) => lot.past.length > 0);
   const pending = scoped.reduce(
     (sum, lot) =>
-      sum +
-      lot.requested.filter((row) => passStatus(row) === "waiting").length,
+      sum + lot.requested.filter((row) => passStatus(row) === "waiting").length,
     0,
   );
   const ready = scoped.reduce(
     (sum, lot) =>
-      sum +
-      lot.requested.filter((row) => passStatus(row) !== "waiting").length,
+      sum + lot.requested.filter((row) => passStatus(row) !== "waiting").length,
     0,
   );
   const past = scoped.reduce((sum, lot) => sum + lot.past.length, 0);
@@ -251,7 +249,9 @@ function LotPassGroup({
     <section className={styles.lotGroup}>
       <header className={styles.lotHead}>
         <div>
-          {showBarrio ? <p className={styles.lotKicker}>{lot.barrioName}</p> : null}
+          {showBarrio ? (
+            <p className={styles.lotKicker}>{lot.barrioName}</p>
+          ) : null}
           <h2>{lot.label}</h2>
         </div>
         <span>

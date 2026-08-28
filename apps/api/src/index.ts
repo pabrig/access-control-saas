@@ -4,7 +4,10 @@ import { corsOrigins, env } from "./env.js";
 import { lookupAccess } from "./lookup-access.js";
 import { createUserClient } from "./supabase.js";
 import { validateAccess } from "./validate-access.js";
-import { validateOwnerAccess, validateResidentByQr } from "./validate-owner-access.js";
+import {
+  validateOwnerAccess,
+  validateResidentByQr,
+} from "./validate-owner-access.js";
 
 const app = express();
 
@@ -90,7 +93,10 @@ app.post("/access/validate", async (req, res) => {
 
   try {
     const body = req.body as Record<string, unknown>;
-    if (typeof body.profileId === "string" && typeof body.propertyId === "string") {
+    if (
+      typeof body.profileId === "string" &&
+      typeof body.propertyId === "string"
+    ) {
       const result = await validateOwnerAccess(user.id, body);
       if (!result.ok) {
         const status =

@@ -86,9 +86,8 @@ export default async function CredencialPage({
     ]);
 
   const rows = (credentials ?? []) as CredentialRow[];
-  const activeId = flash.c && rows.some((row) => row.id === flash.c)
-    ? flash.c
-    : rows[0]?.id;
+  const activeId =
+    flash.c && rows.some((row) => row.id === flash.c) ? flash.c : rows[0]?.id;
   const active = rows.find((row) => row.id === activeId) ?? rows[0];
 
   if (!active) {
@@ -180,7 +179,9 @@ export default async function CredencialPage({
       <section className={ui.card}>
         <h2>{lotLabel(property ?? {})}</h2>
         {active.is_revoked ? (
-          <p className={ui.muted}>Credencial revocada. Contactá administración.</p>
+          <p className={ui.muted}>
+            Credencial revocada. Contactá administración.
+          </p>
         ) : qrDataUrl ? (
           <figure className={styles.qr}>
             <Image

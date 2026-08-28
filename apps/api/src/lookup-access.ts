@@ -99,10 +99,12 @@ async function lookupResidentQr(
     lot_number: string;
     street_name: string | null;
     neighborhood_id: string;
-    neighborhoods: { name: string; complex_id: string | null } | Array<{
-      name: string;
-      complex_id: string | null;
-    }>;
+    neighborhoods:
+      | { name: string; complex_id: string | null }
+      | Array<{
+          name: string;
+          complex_id: string | null;
+        }>;
   }>(data.properties);
 
   if (!profile || !property) {
@@ -178,10 +180,12 @@ async function lookupOwners(
       lot_number: string;
       street_name: string | null;
       neighborhood_id: string;
-      neighborhoods: { name: string; complex_id: string | null } | Array<{
-        name: string;
-        complex_id: string | null;
-      }>;
+      neighborhoods:
+        | { name: string; complex_id: string | null }
+        | Array<{
+            name: string;
+            complex_id: string | null;
+          }>;
     }>(row.properties);
 
     if (!profile || !property) {

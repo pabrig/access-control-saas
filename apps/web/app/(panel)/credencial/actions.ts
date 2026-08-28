@@ -46,7 +46,10 @@ export async function addResidentVehicle(formData: FormData) {
   }
 
   if (!plate) {
-    fail(credencialPath(credentialId), "La patente tiene que ser AAA 000 o AA000AA.");
+    fail(
+      credencialPath(credentialId),
+      "La patente tiene que ser AAA 000 o AA000AA.",
+    );
   }
 
   const supabase = await createClient();
@@ -95,7 +98,10 @@ export async function removeResidentVehicle(formData: FormData) {
   const ownerId = Array.isArray(vehicle?.resident_credentials)
     ? vehicle.resident_credentials[0]?.profile_id
     : (
-        vehicle?.resident_credentials as { profile_id: string } | null | undefined
+        vehicle?.resident_credentials as
+          | { profile_id: string }
+          | null
+          | undefined
       )?.profile_id;
 
   if (!vehicle || ownerId !== session.userId) {
@@ -111,7 +117,9 @@ export async function removeResidentVehicle(formData: FormData) {
     fail(credencialPath(credentialId), error.message);
   }
 
-  redirect(`${credencialPath(credentialId || vehicle.credential_id)}&updated=1`);
+  redirect(
+    `${credencialPath(credentialId || vehicle.credential_id)}&updated=1`,
+  );
 }
 
 export async function createCoOwnerInvite(formData: FormData) {
@@ -122,18 +130,22 @@ export async function createCoOwnerInvite(formData: FormData) {
 
   const propertyId = String(formData.get("property_id") ?? "");
   const inviteeDni = String(formData.get("invitee_dni") ?? "").trim() || null;
-  const inviteeEmail = String(formData.get("invitee_email") ?? "").trim() || null;
+  const inviteeEmail =
+    String(formData.get("invitee_email") ?? "").trim() || null;
 
   if (!propertyId) {
     fail("/credencial", "Elegí un lote.");
   }
 
   const supabase = await createClient();
-  const { data: shareToken, error } = await supabase.rpc("create_resident_invite", {
-    p_property_id: propertyId,
-    p_invitee_dni: inviteeDni,
-    p_invitee_email: inviteeEmail,
-  });
+  const { data: shareToken, error } = await supabase.rpc(
+    "create_resident_invite",
+    {
+      p_property_id: propertyId,
+      p_invitee_dni: inviteeDni,
+      p_invitee_email: inviteeEmail,
+    },
+  );
 
   if (error || !shareToken) {
     fail("/credencial", error?.message ?? "No se pudo crear la invitación.");

@@ -134,7 +134,9 @@ export default async function ReservasPage({
       ) : upcoming.length === 0 ? (
         <Empty
           title={
-            barrio ? "Nadie reservó un espacio todavía" : "No hay eventos próximos"
+            barrio
+              ? "Nadie reservó un espacio todavía"
+              : "No hay eventos próximos"
           }
           description={
             barrio
@@ -158,7 +160,9 @@ export default async function ReservasPage({
 
       {history.length > 0 ? (
         <section>
-          <h2 className={ui.groupTitle}>{barrio ? "Anteriores" : "Historial"}</h2>
+          <h2 className={ui.groupTitle}>
+            {barrio ? "Anteriores" : "Historial"}
+          </h2>
           <ul className={ui.list}>
             {history.map((row) => (
               <EventCard

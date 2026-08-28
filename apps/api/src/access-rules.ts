@@ -61,9 +61,7 @@ export function singleUseReentryBlocked(
   lastStatus: AccessStatus | null,
   actionType: AccessStatus,
 ): boolean {
-  return (
-    isSingleUse && isEntryAction(actionType) && lastStatus === "EXITED"
-  );
+  return isSingleUse && isEntryAction(actionType) && lastStatus === "EXITED";
 }
 
 /** Revoke after the exit that closes the single visit. */

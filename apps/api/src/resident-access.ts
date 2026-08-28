@@ -103,7 +103,10 @@ export async function validateResidentEntry(
     };
   }
 
-  if (credential.profile_id !== profileId || credential.property_id !== propertyId) {
+  if (
+    credential.profile_id !== profileId ||
+    credential.property_id !== propertyId
+  ) {
     return {
       ok: false,
       code: "NOT_OWNER",
@@ -293,14 +296,16 @@ export async function validateResidentEntry(
   }
 
   if (commit) {
-    const { error: insertError } = await serviceClient.from("access_logs").insert({
-      profile_id: profileId,
-      property_id: propertyId,
-      gate_id: gateId,
-      security_user_id: userId,
-      action_type: actionType,
-      resident_vehicle_id: matchedVehicleId,
-    });
+    const { error: insertError } = await serviceClient
+      .from("access_logs")
+      .insert({
+        profile_id: profileId,
+        property_id: propertyId,
+        gate_id: gateId,
+        security_user_id: userId,
+        action_type: actionType,
+        resident_vehicle_id: matchedVehicleId,
+      });
 
     if (insertError) {
       throw insertError;
@@ -329,7 +334,9 @@ export async function validateResidentEntry(
 export async function validateResidentByQr(
   userId: string,
   rawBody: unknown,
-): Promise<ValidateResidentResult | { ok: false; code: "INVALID_QR"; message: string }> {
+): Promise<
+  ValidateResidentResult | { ok: false; code: "INVALID_QR"; message: string }
+> {
   const parsed = zParseQrBody(rawBody);
   if (!parsed.ok) {
     return parsed;

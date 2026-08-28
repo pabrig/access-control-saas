@@ -35,7 +35,10 @@ export default async function ResidentInvitePage({
     notFound();
   }
 
-  if (invite.status !== "PENDING" || new Date(invite.expires_at) <= new Date()) {
+  if (
+    invite.status !== "PENDING" ||
+    new Date(invite.expires_at) <= new Date()
+  ) {
     return (
       <main className={styles.page}>
         <p className={styles.kicker}>{invite.neighborhood_name}</p>
@@ -69,11 +72,21 @@ export default async function ResidentInvitePage({
           <input type="hidden" name="share_token" value={token} />
           <label>
             Nombre
-            <input name="first_name" required maxLength={80} autoComplete="given-name" />
+            <input
+              name="first_name"
+              required
+              maxLength={80}
+              autoComplete="given-name"
+            />
           </label>
           <label>
             Apellido
-            <input name="last_name" required maxLength={80} autoComplete="family-name" />
+            <input
+              name="last_name"
+              required
+              maxLength={80}
+              autoComplete="family-name"
+            />
           </label>
           <label>
             DNI

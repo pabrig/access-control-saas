@@ -309,11 +309,7 @@ export default async function MovimientosPage({
 
   if (structureAdmin && flash.resumen === "1") {
     return (
-      <OpsMovimientos
-        rows={rows}
-        grupo={flash.grupo}
-        error={queryError}
-      />
+      <OpsMovimientos rows={rows} grupo={flash.grupo} error={queryError} />
     );
   }
 
@@ -631,5 +627,3 @@ function GuardBook({
     </>
   );
 }
-
-

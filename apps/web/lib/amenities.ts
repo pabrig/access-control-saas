@@ -55,7 +55,10 @@ export function withoutEventPeople<T extends EventSlot>(rows: T[]) {
   );
 }
 
-export function attendeesForBooking<T extends EventSlot>(booking: T, rows: T[]) {
+export function attendeesForBooking<T extends EventSlot>(
+  booking: T,
+  rows: T[],
+) {
   const key = eventSlotKey(booking);
   return rows.filter(
     (row) => !isBookingLabel(row.guest_name) && eventSlotKey(row) === key,
