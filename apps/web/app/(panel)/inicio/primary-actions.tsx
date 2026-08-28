@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Icon } from "@/components/icons";
+import { PendingLink } from "@/components/pending-link";
 import styles from "./inicio.module.css";
 
 export function PrimaryActions({
@@ -14,31 +14,31 @@ export function PrimaryActions({
   return (
     <div className={styles.actions}>
       {canCreateComplex ? (
-        <Link className={styles.primary} href="/complejos/nuevo">
+        <PendingLink className={styles.primary} href="/complejos/nuevo">
           <Icon name="plus" size={16} />
           Nuevo complejo
-        </Link>
+        </PendingLink>
       ) : null}
       {canCreateBarrio ? (
-        <Link className={styles.primary} href="/barrios/nuevo">
+        <PendingLink className={styles.primary} href="/barrios/nuevo">
           <Icon name="plus" size={16} />
           Nuevo barrio
-        </Link>
+        </PendingLink>
       ) : null}
       {canCreateLot ? (
-        <Link className={styles.primary} href="/lotes/nuevo">
+        <PendingLink className={styles.primary} href="/lotes/nuevo">
           <Icon name="plus" size={16} />
           Nuevo lote
-        </Link>
+        </PendingLink>
       ) : null}
       <details className={styles.more}>
         <summary aria-label="Más acciones">
           <Icon name="more" size={18} />
         </summary>
         <div className={styles.moreMenu}>
-          <Link className={styles.ghost} href="/pases?nuevo=1">
+          <PendingLink className={styles.ghost} href="/pases?nuevo=1">
             Crear pase
-          </Link>
+          </PendingLink>
         </div>
       </details>
     </div>
