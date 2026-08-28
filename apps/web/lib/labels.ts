@@ -54,6 +54,22 @@ export type PassStatus =
   | "expired"
   | "revoked";
 
+export function passIsEnded(input: {
+  is_revoked: boolean;
+  valid_to: string;
+  now?: Date;
+}) {
+  if (input.is_revoked) {
+    return true;
+  }
+
+  return (input.now ?? new Date()) > new Date(input.valid_to);
+}
+
+export function passIsShareable(status: PassStatus) {
+  return status === "waiting" || status === "active" || status === "scheduled";
+}
+
 export function passStatus(input: {
   is_revoked: boolean;
   valid_from: string;
@@ -65,20 +81,20 @@ export function passStatus(input: {
     return "revoked";
   }
 
-  if (input.status === "DRAFT") {
-    return "waiting";
-  }
-
   const now = input.now ?? new Date();
   const from = new Date(input.valid_from);
   const to = new Date(input.valid_to);
 
-  if (now < from) {
-    return "scheduled";
-  }
-
   if (now > to) {
     return "expired";
+  }
+
+  if (input.status === "DRAFT") {
+    return "waiting";
+  }
+
+  if (now < from) {
+    return "scheduled";
   }
 
   return "active";

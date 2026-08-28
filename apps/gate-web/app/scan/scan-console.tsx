@@ -22,45 +22,93 @@ type InvitationVehicle = {
   }>;
 };
 
-type Identity = {
-  qrToken: string;
-  guestName: string;
-  guestDni: string | null;
-  lotNumber: string;
-  streetName: string | null;
-  neighborhoodName: string;
-  actionType: string;
-  vehicles: InvitationVehicle[];
-  matchedPlate: string | null;
-};
+type Identity =
+  | {
+      kind: "invitation";
+      qrToken: string;
+      guestName: string;
+      guestDni: string | null;
+      lotNumber: string;
+      streetName: string | null;
+      neighborhoodName: string;
+      actionType: string;
+      vehicles: InvitationVehicle[];
+      matchedPlate: string | null;
+    }
+  | {
+      kind: "owner";
+      qrToken: string;
+      profileId: string;
+      propertyId: string;
+      guestName: string;
+      guestDni: null;
+      lotNumber: string;
+      streetName: string | null;
+      neighborhoodName: string;
+      actionType: string;
+      vehicles: InvitationVehicle[];
+      matchedPlate: string | null;
+    };
 
-type ValidateOk = {
-  ok: true;
-  actionType: string;
-  invitation: {
-    guestName: string;
-    guestDni: string | null;
-    lotNumber: string;
-    streetName: string | null;
-    neighborhoodName: string;
-  };
-  vehicles: InvitationVehicle[];
-  matchedPlate: string | null;
-  committed: boolean;
-};
+type ValidateOk =
+  | {
+      ok: true;
+      kind: "invitation";
+      actionType: string;
+      invitation: {
+        guestName: string;
+        guestDni: string | null;
+        lotNumber: string;
+        streetName: string | null;
+        neighborhoodName: string;
+      };
+      vehicles: InvitationVehicle[];
+      matchedPlate: string | null;
+      committed: boolean;
+    }
+  | {
+      ok: true;
+      kind: "owner";
+      actionType: string;
+      owner: {
+        profileId: string;
+        propertyId: string;
+        firstName: string;
+        lastName: string;
+        lotNumber: string;
+        streetName: string | null;
+        neighborhoodName: string;
+      };
+      vehicles: InvitationVehicle[];
+      matchedPlate: string | null;
+      committed: boolean;
+    };
 
 type ValidateFail = { ok: false; code: string; message: string };
 type ValidateResult = ValidateOk | ValidateFail;
 
-type LookupMatch = {
-  qrToken: string;
-  guestName: string;
-  guestDni: string | null;
-  plateDisplay: string | null;
-  lotNumber: string;
-  streetName: string | null;
-  neighborhoodName: string;
-};
+type LookupMatch =
+  | {
+      kind: "invitation";
+      qrToken: string;
+      guestName: string;
+      guestDni: string | null;
+      plateDisplay: string | null;
+      lotNumber: string;
+      streetName: string | null;
+      neighborhoodName: string;
+    }
+  | {
+      kind: "owner";
+      qrToken: string;
+      profileId: string;
+      propertyId: string;
+      ownerName: string;
+      email: string | null;
+      lotNumber: string;
+      streetName: string | null;
+      neighborhoodName: string;
+    };
 
 type LookupResult = { ok: true; matches: LookupMatch[] } | ValidateFail;
 
@@ -118,21 +166,38 @@ function outcomeCopy(actionType: string) {
   return { title: "Entró", verb: "Entrar", out: false };
 }
 
+function personName(firstName: string, lastName: string) {
+  return `${firstName} ${lastName}`.trim();
+}
+
 async function loadMovements() {
   const supabase = createClient();
   const { data } = await supabase
     .from("access_logs")
-    .select("id, action_type, timestamp, gates(name), invitations(guest_name)")
+    .select(
+      "id, action_type, timestamp, gates(name), invitations(guest_name), profiles!access_logs_profile_id_fkey(first_name, last_name)",
+    )
     .order("timestamp", { ascending: false })
     .limit(20);
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    actionType: row.action_type,
-    timestamp: row.timestamp,
-    gateName: asNamed(row.gates)?.name ?? null,
-    guestName: asNamed(row.invitations)?.guest_name ?? null,
-  })) satisfies Movement[];
+  return (data ?? []).map((row) => {
+    const resident = asNamed(row.profiles) as {
+      first_name?: string;
+      last_name?: string;
+    } | null;
+    const residentName =
+      resident?.first_name && resident?.last_name
+        ? personName(resident.first_name, resident.last_name)
+        : null;
+
+    return {
+      id: row.id,
+      actionType: row.action_type,
+      timestamp: row.timestamp,
+      gateName: asNamed(row.gates)?.name ?? null,
+      guestName: asNamed(row.invitations)?.guest_name ?? residentName,
+    };
+  }) satisfies Movement[];
 }
 
 export function ScanConsole({ apiUrl }: { apiUrl: string }) {
@@ -256,8 +321,9 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
         { qrToken, gateId: gate.id, commit: false },
       );
 
-      if (payload.ok) {
+      if (payload.ok && "invitation" in payload) {
         setIdentity({
+          kind: "invitation",
           qrToken,
           guestName: payload.invitation.guestName,
           guestDni: payload.invitation.guestDni,
@@ -266,6 +332,26 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
           neighborhoodName: payload.invitation.neighborhoodName,
           actionType: payload.actionType,
           vehicles: payload.vehicles,
+          matchedPlate: payload.matchedPlate,
+        });
+      } else if (payload.ok && payload.kind === "owner") {
+        setIdentity({
+          kind: "owner",
+          qrToken,
+          profileId: payload.owner.profileId,
+          propertyId: payload.owner.propertyId,
+          guestName: personName(payload.owner.firstName, payload.owner.lastName),
+          guestDni: null,
+          lotNumber: payload.owner.lotNumber,
+          streetName: payload.owner.streetName,
+          neighborhoodName: payload.owner.neighborhoodName,
+          actionType: payload.actionType,
+          vehicles: payload.vehicles.map((vehicle) => ({
+            plateDisplay: vehicle.plateDisplay,
+            plateFormat: vehicle.plateFormat,
+            color: vehicle.color,
+            passengers: [],
+          })),
           matchedPlate: payload.matchedPlate,
         });
       } else {
@@ -304,12 +390,13 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
 
       if (payload.ok) {
         setMatches(payload.matches);
-        if (
-          payload.matches.length === 1 &&
-          payload.matches[0] &&
-          value.trim().length >= 4
-        ) {
-          await previewQr(payload.matches[0].qrToken);
+        if (payload.matches.length === 1 && value.trim().length >= 4) {
+          const match = payload.matches[0];
+          if (match?.kind === "owner") {
+            await previewQr(match.qrToken);
+          } else if (match?.kind === "invitation") {
+            await previewQr(match.qrToken);
+          }
         }
       }
     },
@@ -392,6 +479,9 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
 
       {identity && outcome ? (
         <article className={styles.identity} aria-live="polite">
+          {identity.kind === "owner" ? (
+            <p className={styles.identityMeta}>Propietario</p>
+          ) : null}
           {identity.guestDni ? (
             <p className={styles.identityMeta}>DNI {identity.guestDni}</p>
           ) : null}
@@ -457,7 +547,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
               void lookup(query);
             }}
           >
-            <label htmlFor="gate-search">Patente, DNI o nombre</label>
+            <label htmlFor="gate-search">Patente, DNI, nombre o lote</label>
             <input
               id="gate-search"
               ref={searchRef}
@@ -474,16 +564,32 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
           {matches.length > 1 ? (
             <ul className={styles.suggestions}>
               {matches.map((match) => (
-                <li key={match.qrToken}>
+                <li
+                  key={
+                    match.kind === "owner"
+                      ? `${match.profileId}:${match.propertyId}`
+                      : match.qrToken
+                  }
+                >
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => void previewQr(match.qrToken)}
                   >
-                    <strong>{match.guestName}</strong>
+                    <strong>
+                      {match.kind === "owner" ? match.ownerName : match.guestName}
+                    </strong>
                     <span>
-                      {match.plateDisplay ? `${match.plateDisplay} · ` : ""}
-                      {match.guestDni ? `DNI ${match.guestDni} · ` : ""}
+                      {match.kind === "owner" ? "Propietario · " : ""}
+                      {match.kind === "invitation" && match.plateDisplay
+                        ? `${match.plateDisplay} · `
+                        : ""}
+                      {match.kind === "invitation" && match.guestDni
+                        ? `DNI ${match.guestDni} · `
+                        : ""}
+                      {match.kind === "owner" && match.email
+                        ? `${match.email} · `
+                        : ""}
                       Lote {match.lotNumber}
                     </span>
                   </button>
@@ -568,7 +674,9 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
           </span>
           <strong>
             {flash.ok
-              ? flash.invitation.guestName
+              ? flash.kind === "owner"
+                ? personName(flash.owner.firstName, flash.owner.lastName)
+                : flash.invitation.guestName
               : gateErrorLabel(flash.code, flash.message)}
           </strong>
         </button>

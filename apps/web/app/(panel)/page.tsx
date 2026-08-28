@@ -51,6 +51,10 @@ export default async function DashboardPage() {
         <PageHeader title={`Hola, ${session.firstName}`} />
 
         <nav className={ui.quick} aria-label="Acciones rápidas">
+          <Link className={ui.quickLink} href="/credencial">
+            <Icon name="qr" />
+            Credencial
+          </Link>
           <Link className={ui.quickLink} href="/pases?nuevo=1">
             <Icon name="person" />
             Invitar

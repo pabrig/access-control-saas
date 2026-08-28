@@ -20,6 +20,7 @@ export default async function PanelLayout({
   const nav = resident
     ? [
         { href: "/", label: "Inicio" },
+        { href: "/credencial", label: "Credencial" },
         { href: "/pases", label: "Invitados" },
         { href: "/reservas", label: "Eventos" },
         { href: "/movimientos", label: "Historial" },

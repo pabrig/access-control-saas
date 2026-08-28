@@ -51,21 +51,37 @@ type LogRow = {
   action_type: string;
   timestamp: string;
   invitation_id: string | null;
+  profile_id: string | null;
+  property_id: string | null;
   gates: GateRel | GateRel[] | null;
   invitations: InvitationRel | InvitationRel[] | null;
   profiles:
     | { first_name: string; last_name: string }
     | { first_name: string; last_name: string }[]
     | null;
+  resident:
+    | { first_name: string; last_name: string }
+    | { first_name: string; last_name: string }[]
+    | null;
+  properties:
+    | { id: string; lot_number: string }
+    | { id: string; lot_number: string }[]
+    | null;
 };
 
 function placeOf(log: LogRow) {
   const gate = asOne<GateRel>(log.gates);
   const invitation = asOne<InvitationRel>(log.invitations);
+  const property = asOne<{
+    neighborhood_id?: string | null;
+    neighborhoods?: Named | Named[] | null;
+  }>(log.properties);
   const complex = asOne<Named>(gate?.complexes);
   const gateBarrio = asOne<Named>(gate?.neighborhoods);
   const inviteBarrio = asOne<Named>(invitation?.neighborhoods);
-  const barrioName = inviteBarrio?.name ?? gateBarrio?.name ?? null;
+  const propertyBarrio = asOne<Named>(property?.neighborhoods);
+  const barrioName =
+    inviteBarrio?.name ?? propertyBarrio?.name ?? gateBarrio?.name ?? null;
 
   return {
     gateId: gate?.id ?? `unknown-${log.id}`,
@@ -73,6 +89,8 @@ function placeOf(log: LogRow) {
     barrioId:
       invitation?.neighborhood_id ??
       inviteBarrio?.id ??
+      property?.neighborhood_id ??
+      propertyBarrio?.id ??
       gate?.neighborhood_id ??
       gateBarrio?.id ??
       null,
@@ -103,11 +121,21 @@ function guestName(log: LogRow) {
   if (isBookingLabel(invitation?.guest_name)) {
     return eventSpaceName(invitation?.guest_name);
   }
-  return invitation?.guest_name ?? "Invitado";
+  if (invitation?.guest_name) {
+    return invitation.guest_name;
+  }
+
+  const resident = asOne<{ first_name: string; last_name: string }>(log.resident);
+  if (resident) {
+    return `${personName(resident)} (propietario)`;
+  }
+
+  return "Invitado";
 }
 
 function MovementFeedItem({ log }: { log: LogRow }) {
   const invitation = asOne<InvitationRel>(log.invitations);
+  const property = asOne<{ id: string; lot_number: string }>(log.properties);
   const exited = isExitAction(log.action_type);
   const content = (
     <>
@@ -127,6 +155,14 @@ function MovementFeedItem({ log }: { log: LogRow }) {
   if (invitation?.id) {
     return (
       <Link className={ui.feedItem} href={`/pases/${invitation.id}`}>
+        {content}
+      </Link>
+    );
+  }
+
+  if (property?.id) {
+    return (
+      <Link className={ui.feedItem} href={`/lotes/${property.id}`}>
         {content}
       </Link>
     );
@@ -154,7 +190,7 @@ export default async function MovimientosPage({
   const { data: logs } = await supabase
     .from("access_logs")
     .select(
-      "id, action_type, timestamp, invitation_id, gates(id, name, type, complex_id, neighborhood_id, complexes(id, name), neighborhoods(id, name)), invitations(id, guest_name, neighborhood_id, neighborhoods(id, name)), profiles!access_logs_security_user_id_fkey(first_name, last_name)",
+      "id, action_type, timestamp, invitation_id, profile_id, property_id, gates(id, name, type, complex_id, neighborhood_id, complexes(id, name), neighborhoods(id, name)), invitations(id, guest_name, neighborhood_id, neighborhoods(id, name)), profiles!access_logs_security_user_id_fkey(first_name, last_name), resident:profiles!access_logs_profile_id_fkey(first_name, last_name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name))",
     )
     .order("timestamp", { ascending: false })
     .limit(200);

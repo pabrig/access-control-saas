@@ -17,11 +17,20 @@ export function inviteShareUrl(origin: string, shareToken: string) {
   return `${origin}/i/${shareToken}`;
 }
 
+export function residentInviteShareUrl(origin: string, shareToken: string) {
+  return `${origin}/r/${shareToken}`;
+}
+
 export function whatsappShareHref(url: string, ready: boolean) {
   const text = ready
     ? `Tu QR de acceso: ${url}`
     : `Te invité. Completá tus datos y mostrá el QR en la puerta: ${url}`;
 
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
+export function residentWhatsappShareHref(url: string) {
+  const text = `Te invito como co-propietario. Creá tu cuenta y mostrá tu QR en la puerta: ${url}`;
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 

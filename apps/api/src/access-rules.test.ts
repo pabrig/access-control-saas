@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   gateMatchesInvitation,
+  gateMatchesProperty,
   invitationWindowError,
   shouldRevokeSingleUse,
 } from "./access-rules.js";
@@ -9,6 +10,41 @@ import {
 const complexId = "10000000-0000-0000-0000-000000000001";
 const neighborhoodId = "10000000-0000-0000-0000-000000000011";
 const otherNeighborhood = "10000000-0000-0000-0000-000000000012";
+
+test("WRONG_GATE: property scope mirrors invitation scope", () => {
+  assert.equal(
+    gateMatchesProperty({
+      gateType: "MAIN_COMPLEX",
+      gateComplexId: complexId,
+      gateNeighborhoodId: null,
+      propertyNeighborhoodId: neighborhoodId,
+      propertyComplexId: complexId,
+    }),
+    true,
+  );
+
+  assert.equal(
+    gateMatchesProperty({
+      gateType: "INTERNAL_NEIGHBORHOOD",
+      gateComplexId: null,
+      gateNeighborhoodId: neighborhoodId,
+      propertyNeighborhoodId: neighborhoodId,
+      propertyComplexId: complexId,
+    }),
+    true,
+  );
+
+  assert.equal(
+    gateMatchesProperty({
+      gateType: "INTERNAL_NEIGHBORHOOD",
+      gateComplexId: null,
+      gateNeighborhoodId: neighborhoodId,
+      propertyNeighborhoodId: otherNeighborhood,
+      propertyComplexId: complexId,
+    }),
+    false,
+  );
+});
 
 test("WRONG_GATE: main barrier only accepts the invitation complex", () => {
   assert.equal(

@@ -13,7 +13,9 @@
 - **Owner (mobile):** Creates a `DRAFT` invitation (lot, validity window, optional single-use) and shares `/i/{share_token}` by WhatsApp or email. No barrier QR yet.
 - **Guest:** Opens the public link (no login), fills name / DNI / cars, then `claim_invite` mints `qr_token` and sets `READY`.
 - **Walk-up:** Owner can create a `READY` pass immediately with a guest name if the visitor is already at the gate.
-- **Scanning:** `POST /access/validate` looks up `qr_token`. Drafts are not scannable (`NOT_READY`).
+- **Owner resident:** Security can register owner entry without a pass. Lookup by name, email, DNI or lot; scan a permanent resident QR (`resident_credentials.qr_token`). Validate tries invitations first, then resident credentials. No expiry or single-use.
+- **Resident credential:** Each OWNER gets a permanent QR per lot, optional vehicles, and can invite co-owners via `/r/{share_token}` (WhatsApp) or pre-filled DNI.
+- **Scanning:** `POST /access/validate` looks up `qr_token` for guests, or `profileId` + `propertyId` for owners. Drafts are not scannable (`NOT_READY`).
 
 ### 2.1. Double Barrier Logic
 

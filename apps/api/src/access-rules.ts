@@ -1,5 +1,22 @@
 import type { AccessStatus, GateType } from "./access-state.js";
 
+export function gateMatchesProperty(input: {
+  gateType: GateType;
+  gateComplexId: string | null;
+  gateNeighborhoodId: string | null;
+  propertyNeighborhoodId: string;
+  propertyComplexId: string | null;
+}): boolean {
+  if (input.gateType === "MAIN_COMPLEX") {
+    return (
+      input.gateComplexId !== null &&
+      input.gateComplexId === input.propertyComplexId
+    );
+  }
+
+  return input.gateNeighborhoodId === input.propertyNeighborhoodId;
+}
+
 export function gateMatchesInvitation(input: {
   gateType: GateType;
   gateComplexId: string | null;

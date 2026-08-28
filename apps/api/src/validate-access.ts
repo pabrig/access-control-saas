@@ -44,6 +44,7 @@ export type InvitationVehicle = {
 export type ValidateResult =
   | {
       ok: true;
+      kind: "invitation";
       actionType: AccessStatus;
       invitation: {
         id: string;
@@ -285,6 +286,7 @@ export async function validateAccess(
 
   return {
     ok: true,
+    kind: "invitation" as const,
     actionType,
     invitation: {
       id: invitation.id,

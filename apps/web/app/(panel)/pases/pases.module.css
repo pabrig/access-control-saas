@@ -261,3 +261,27 @@
   font-size: 14px;
   text-align: center;
 }
+
+.endedPass {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+  border-radius: 16px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.45;
+  display: grid;
+  gap: 6px;
+}
+
+.endedPass strong {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.endedPass p {
+  margin: 0;
+  color: color-mix(in srgb, var(--danger) 85%, var(--ink));
+}
