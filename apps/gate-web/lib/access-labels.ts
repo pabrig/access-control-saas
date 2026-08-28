@@ -1,11 +1,13 @@
-export const ACCESS_ACTION_LABEL: Record<string, string> = {
-  PENDING: "Pendiente",
-  IN_COMPLEX: "Entrada al complejo",
-  IN_PROPERTY: "Entrada a la propiedad",
-  EXITED: "Salida",
-  EXPIRED: "Expirada",
-};
+export function accessActionShort(actionType: string) {
+  if (actionType === "IN_COMPLEX" || actionType === "IN_PROPERTY") {
+    return "Entró";
+  }
+  if (actionType === "EXITED") {
+    return "Salió";
+  }
+  return actionType;
+}
 
-export function accessActionLabel(actionType: string) {
-  return ACCESS_ACTION_LABEL[actionType] ?? actionType;
+export function isExitAction(actionType: string) {
+  return actionType === "EXITED";
 }

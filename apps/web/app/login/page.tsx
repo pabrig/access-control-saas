@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { NexoLogo } from "@/components/brand/nexo-logo";
 import { createClient } from "@/lib/supabase/server";
 import { signIn } from "./actions";
 import styles from "./login.module.css";
@@ -14,7 +15,17 @@ export default async function LoginPage({
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/invitations");
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || profile.is_active !== false) {
+      redirect("/");
+    }
+
+    await supabase.auth.signOut();
   }
 
   const { error } = await searchParams;
@@ -22,11 +33,13 @@ export default async function LoginPage({
   return (
     <main className={styles.main}>
       <section className={styles.card}>
-        <p className={styles.kicker}>Access Control</p>
-        <h1>Entrar al panel</h1>
+        <p className={styles.brand}>
+          <NexoLogo />
+        </p>
+        <h1>Entrá a tu comunidad</h1>
         <p className={styles.lead}>
-          Usá tu cuenta de Supabase Auth. El listado de invitaciones se filtra
-          solo con RLS, según tu rol.
+          Con tu email ves solo lo de tu lote, tu barrio o el complejo, según
+          quién seas.
         </p>
         {error ? <p className={styles.error}>{error}</p> : null}
         <form action={signIn} className={styles.form}>
@@ -41,7 +54,7 @@ export default async function LoginPage({
             />
           </label>
           <label>
-            Password
+            Contraseña
             <input
               type="password"
               name="password"
@@ -50,12 +63,17 @@ export default async function LoginPage({
               defaultValue="password123"
             />
           </label>
-          <button type="submit">Iniciar sesión</button>
+          <button type="submit">Entrar</button>
         </form>
-        <p className={styles.hint}>
-          Seed local: owner@example.com, owner2@example.com,
-          complex.admin@example.com, superadmin@example.com — password123
-        </p>
+        <details className={styles.hint}>
+          <summary>Cuentas de prueba</summary>
+          <p>
+            owner@example.com · complex.admin@example.com ·
+            neighborhood.admin@example.com · superadmin@example.com ·
+            security@example.com
+          </p>
+          <p>Contraseña: password123</p>
+        </details>
       </section>
     </main>
   );

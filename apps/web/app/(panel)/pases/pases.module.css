@@ -1,0 +1,287 @@
+.list {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.lotStack {
+  display: grid;
+  gap: 28px;
+}
+
+.lotGroup {
+  display: grid;
+  gap: 4px;
+}
+
+.lotHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.lotHead h2 {
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.lotHead span {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.lotKicker {
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.guest {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.guest svg {
+  color: var(--muted);
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.guestBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.guestTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.guestTop strong {
+  font-size: 15px;
+  letter-spacing: -0.03em;
+}
+
+.guestMeta {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.summary {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.when {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.share {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.shareAction {
+  min-height: 64px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.shareAction svg {
+  color: var(--brand);
+}
+
+.cancel {
+  margin-top: 16px;
+}
+
+.cancel button {
+  width: 100%;
+}
+
+.passHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.timeline {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.timeline li {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.timeline span {
+  color: var(--muted);
+}
+
+.vehicles {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.vehicles li {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.vehicles span {
+  color: var(--muted);
+}
+
+.qr {
+  margin: 0 auto;
+  padding: 12px;
+  width: fit-content;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  justify-items: center;
+}
+
+.step {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-top: 4px;
+}
+
+.kinds {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+@media (min-width: 560px) {
+  .kinds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.kind,
+.kindActive {
+  min-height: 72px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--input);
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 2px 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kind svg,
+.kindActive svg {
+  grid-row: 1 / span 2;
+  color: var(--brand);
+}
+
+.kind strong,
+.kindActive strong {
+  font-size: 15px;
+}
+
+.kind span,
+.kindActive span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.kindActive {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.waitingQr {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.endedPass {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+  border-radius: 16px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.45;
+  display: grid;
+  gap: 6px;
+}
+
+.endedPass strong {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.endedPass p {
+  margin: 0;
+  color: color-mix(in srgb, var(--danger) 85%, var(--ink));
+}

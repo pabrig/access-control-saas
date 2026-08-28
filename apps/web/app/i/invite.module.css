@@ -1,0 +1,126 @@
+.shell {
+  min-height: 100dvh;
+  padding: 12px 16px 40px;
+}
+
+.top {
+  width: min(100%, 440px);
+  margin: 0 auto 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  font-size: 1.15rem;
+}
+
+.page {
+  width: min(100%, 440px);
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.page h1,
+.credential h1 {
+  font-size: clamp(1.55rem, 6vw, 2rem);
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  font-weight: 750;
+}
+
+.lead {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.when {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.credential {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+
+.qr {
+  margin: 0;
+  width: 100%;
+  padding: 18px 16px 14px;
+  background: #fff;
+  color: var(--nexo-base);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.qr figcaption {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.action {
+  min-height: 64px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.action svg {
+  color: var(--brand);
+}
+
+.claim {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  border-radius: var(--radius);
+}
+
+.claim :global(button[type="submit"]) {
+  width: 100%;
+  min-height: 48px;
+}
+
+.page :global(input),
+.page :global(select) {
+  min-height: 44px;
+}

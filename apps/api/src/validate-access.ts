@@ -3,13 +3,18 @@ import {
   gateMatchesInvitation,
   invitationWindowError,
   shouldRevokeSingleUse,
+  singleUseReentryBlocked,
 } from "./access-rules.js";
 import { nextAccessAction, type AccessStatus } from "./access-state.js";
+import { assertGateOperator } from "./gate-auth.js";
+import { matchInvitationPlate, parsePlate } from "./plates.js";
 import { serviceClient } from "./supabase.js";
 
 const bodySchema = z.object({
   qrToken: z.string().uuid(),
   gateId: z.string().uuid(),
+  plate: z.string().max(12).optional(),
+  commit: z.boolean().optional(),
 });
 
 export type ValidateErrorCode =
@@ -21,17 +26,40 @@ export type ValidateErrorCode =
   | "NOT_YET_VALID"
   | "EXPIRED"
   | "WRONG_GATE"
-  | "INVALID_TRANSITION";
+  | "INVALID_TRANSITION"
+  | "INVALID_PLATE"
+  | "UNKNOWN_PLATE"
+  | "NOT_READY"
+  | "ALREADY_USED";
+
+export type InvitationVehicle = {
+  plateDisplay: string;
+  plateFormat: string;
+  color: string | null;
+  passengers: Array<{
+    fullName: string;
+    dni: string | null;
+    isDriver: boolean;
+  }>;
+};
 
 export type ValidateResult =
   | {
       ok: true;
+      kind: "invitation";
       actionType: AccessStatus;
       invitation: {
         id: string;
         guestName: string;
+        guestDni: string | null;
         propertyId: string;
+        lotNumber: string;
+        streetName: string | null;
+        neighborhoodName: string;
       };
+      vehicles: InvitationVehicle[];
+      matchedPlate: string | null;
+      committed: boolean;
     }
   | { ok: false; code: ValidateErrorCode; message: string };
 
@@ -48,68 +76,18 @@ export async function validateAccess(
     };
   }
 
-  const { qrToken, gateId } = parsed.data;
+  const { qrToken, gateId, plate } = parsed.data;
+  const commit = parsed.data.commit !== false;
 
-  const { data: profile, error: profileError } = await serviceClient
-    .from("profiles")
-    .select("id, is_active")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (profileError) {
-    throw profileError;
-  }
-
-  if (!profile?.is_active) {
-    return { ok: false, code: "INACTIVE_USER", message: "User is inactive" };
-  }
-
-  const { data: roles, error: rolesError } = await serviceClient
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-
-  if (rolesError) {
-    throw rolesError;
-  }
-
-  const isSuperadmin = roles?.some((row) => row.role === "SUPERADMIN") ?? false;
-  const isSecurity = roles?.some((row) => row.role === "SECURITY") ?? false;
-
-  if (!isSuperadmin && !isSecurity) {
-    return {
-      ok: false,
-      code: "NO_SHIFT",
-      message: "Only SECURITY can validate access",
-    };
-  }
-
-  if (!isSuperadmin) {
-    const { data: shift, error: shiftError } = await serviceClient
-      .from("shifts")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("gate_id", gateId)
-      .is("ended_at", null)
-      .maybeSingle();
-
-    if (shiftError) {
-      throw shiftError;
-    }
-
-    if (!shift) {
-      return {
-        ok: false,
-        code: "NO_SHIFT",
-        message: "No active shift on this gate",
-      };
-    }
+  const auth = await assertGateOperator(userId, gateId);
+  if (!auth.ok) {
+    return auth;
   }
 
   const { data: invitation, error: invitationError } = await serviceClient
     .from("invitations")
     .select(
-      "id, guest_name, property_id, neighborhood_id, valid_from, valid_to, is_revoked, is_single_use",
+      "id, guest_name, guest_dni, property_id, neighborhood_id, valid_from, valid_to, is_revoked, is_single_use, status, qr_token, properties(lot_number, street_name), neighborhoods(name)",
     )
     .eq("qr_token", qrToken)
     .maybeSingle();
@@ -125,6 +103,71 @@ export async function validateAccess(
   if (invitation.is_revoked) {
     return { ok: false, code: "REVOKED", message: "Invitation was revoked" };
   }
+
+  if (invitation.status !== "READY" || !invitation.qr_token) {
+    return {
+      ok: false,
+      code: "NOT_READY",
+      message: "Guest has not completed this pass yet",
+    };
+  }
+
+  const { data: vehicleRows, error: vehiclesError } = await serviceClient
+    .from("invitation_vehicles")
+    .select(
+      "id, plate_normalized, plate_display, plate_format, color, invitation_passengers(full_name, dni, is_driver)",
+    )
+    .eq("invitation_id", invitation.id)
+    .order("created_at", { ascending: true });
+
+  if (vehiclesError) {
+    throw vehiclesError;
+  }
+
+  const plateDecision = matchInvitationPlate(
+    (vehicleRows ?? []).map((row) => ({
+      plateNormalized: row.plate_normalized,
+    })),
+    plate,
+  );
+
+  if (plateDecision === "invalid") {
+    return {
+      ok: false,
+      code: "INVALID_PLATE",
+      message: "Plate must be AAA 000 or AA000AA",
+    };
+  }
+
+  if (plateDecision === "unknown") {
+    return {
+      ok: false,
+      code: "UNKNOWN_PLATE",
+      message: "This plate is not on the invitation",
+    };
+  }
+
+  const matchedPlate =
+    plateDecision === "match"
+      ? (parsePlate(plate ?? "")?.display ?? null)
+      : null;
+  const matchedVehicleId =
+    plateDecision === "match" && plate
+      ? ((vehicleRows ?? []).find(
+          (row) => row.plate_normalized === parsePlate(plate)?.normalized,
+        )?.id ?? null)
+      : null;
+
+  const vehicles: InvitationVehicle[] = (vehicleRows ?? []).map((row) => ({
+    plateDisplay: row.plate_display,
+    plateFormat: row.plate_format,
+    color: row.color,
+    passengers: (row.invitation_passengers ?? []).map((passenger) => ({
+      fullName: passenger.full_name,
+      dni: passenger.dni,
+      isDriver: passenger.is_driver,
+    })),
+  }));
 
   const { data: gate, error: gateError } = await serviceClient
     .from("gates")
@@ -190,6 +233,16 @@ export async function validateAccess(
     };
   }
 
+  if (
+    singleUseReentryBlocked(invitation.is_single_use, lastStatus, actionType)
+  ) {
+    return {
+      ok: false,
+      code: "ALREADY_USED",
+      message: "This single-use pass already completed one visit",
+    };
+  }
+
   const windowError = invitationWindowError(
     Date.now(),
     new Date(invitation.valid_from).getTime(),
@@ -209,37 +262,55 @@ export async function validateAccess(
     return { ok: false, code: "EXPIRED", message: "Invitation has expired" };
   }
 
-  const { error: insertError } = await serviceClient
-    .from("access_logs")
-    .insert({
-      invitation_id: invitation.id,
-      gate_id: gateId,
-      security_user_id: userId,
-      action_type: actionType,
-    });
+  if (commit) {
+    const { error: insertError } = await serviceClient
+      .from("access_logs")
+      .insert({
+        invitation_id: invitation.id,
+        gate_id: gateId,
+        security_user_id: userId,
+        action_type: actionType,
+        vehicle_id: matchedVehicleId,
+      });
 
-  if (insertError) {
-    throw insertError;
-  }
+    if (insertError) {
+      throw insertError;
+    }
 
-  if (shouldRevokeSingleUse(invitation.is_single_use, actionType)) {
-    const { error: revokeError } = await serviceClient
-      .from("invitations")
-      .update({ is_revoked: true })
-      .eq("id", invitation.id);
+    if (shouldRevokeSingleUse(invitation.is_single_use, actionType)) {
+      const { error: revokeError } = await serviceClient
+        .from("invitations")
+        .update({ is_revoked: true })
+        .eq("id", invitation.id);
 
-    if (revokeError) {
-      throw revokeError;
+      if (revokeError) {
+        throw revokeError;
+      }
     }
   }
 
+  const property = Array.isArray(invitation.properties)
+    ? invitation.properties[0]
+    : invitation.properties;
+  const neighborhoodName = Array.isArray(invitation.neighborhoods)
+    ? invitation.neighborhoods[0]?.name
+    : invitation.neighborhoods?.name;
+
   return {
     ok: true,
+    kind: "invitation" as const,
     actionType,
     invitation: {
       id: invitation.id,
-      guestName: invitation.guest_name,
+      guestName: invitation.guest_name ?? "Invitado",
+      guestDni: invitation.guest_dni,
       propertyId: invitation.property_id,
+      lotNumber: property?.lot_number ?? "",
+      streetName: property?.street_name ?? null,
+      neighborhoodName: neighborhoodName ?? "Barrio",
     },
+    vehicles,
+    matchedPlate,
+    committed: commit,
   };
 }

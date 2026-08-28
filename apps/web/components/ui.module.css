@@ -1,0 +1,616 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.title {
+  font-size: clamp(1.55rem, 4.2vw, 2rem);
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  font-weight: 750;
+}
+
+.description {
+  margin-top: 6px;
+  color: var(--muted);
+  max-width: 52ch;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat,
+.card,
+.banner,
+.empty {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.stat {
+  padding: 16px 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.stat:hover {
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.statValue {
+  font-size: 1.7rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.card {
+  padding: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.card h2,
+.sectionTitle {
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+a.card {
+  gap: 8px;
+}
+
+a.card:hover {
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
+}
+
+.banner {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.ok {
+  background: var(--ok-soft);
+  border-color: color-mix(in srgb, var(--ok) 25%, var(--line));
+  color: var(--ok);
+}
+
+.danger {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 25%, var(--line));
+  color: var(--danger);
+}
+
+.warn {
+  background: var(--warn-soft);
+  border-color: color-mix(in srgb, var(--warn) 25%, var(--line));
+  color: var(--warn);
+}
+
+.empty {
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty strong {
+  display: block;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  width: fit-content;
+}
+
+.badgeActive {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.badgeScheduled {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.badgeExpired,
+.badgeMuted {
+  background: color-mix(in srgb, var(--muted) 16%, var(--surface));
+  color: var(--muted);
+}
+
+.badgeRevoked,
+.badgeDanger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.form label,
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form input,
+.form select,
+.form textarea {
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--input);
+  font-weight: 400;
+}
+
+.form textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.form input:focus,
+.form select:focus,
+.form textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--brand) 35%, transparent);
+  border-color: var(--brand);
+}
+
+.check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  font-weight: 500;
+}
+
+.button,
+.buttonSecondary,
+.buttonDanger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 650;
+}
+
+.button {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.button:hover {
+  background: var(--brand-hover);
+}
+
+.buttonSecondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.buttonDanger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
+}
+
+.list {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.cardGrid {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .cardGrid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pickList {
+  display: grid;
+  gap: 8px;
+}
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--brand) 30%, var(--line));
+  background: color-mix(in srgb, var(--brand-soft) 45%, var(--surface));
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick:hover {
+  border-style: solid;
+  border-color: var(--brand);
+}
+
+.pickLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.pickHint {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.inlineAdd {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--brand-soft) 50%, var(--surface));
+  border: 1px dashed color-mix(in srgb, var(--brand) 22%, var(--line));
+}
+
+.inlineAdd summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.card > summary,
+.card details > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.card > summary::after {
+  content: "▾";
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.card:not([open]) > summary::after {
+  content: "▸";
+}
+
+.card > summary::-webkit-details-marker,
+.card details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.inlineAdd summary::-webkit-details-marker {
+  color: var(--brand);
+}
+
+.groupTitle {
+  margin: 20px 0 8px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.deskSplit {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .deskSplit {
+    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    align-items: start;
+    gap: 28px;
+  }
+
+  .deskSplit > :first-child {
+    position: sticky;
+    top: 0;
+  }
+}
+
+.modules {
+  display: grid;
+  gap: 28px;
+}
+
+.split {
+  display: grid;
+  gap: 16px;
+}
+
+.quick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.quickLink {
+  min-height: 76px;
+  padding: 14px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.quickLink svg {
+  color: var(--brand);
+}
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 10px;
+}
+
+.sectionHead h2 {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sectionHead a {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--brand);
+}
+
+.feed {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.feedItem {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.feedIcon,
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.avatar {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.feedOut {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.feedBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.feedBody strong {
+  font-size: 15px;
+  letter-spacing: -0.03em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedMeta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.feedTime {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.quiet {
+  padding: 8px 2px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.tableCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.tableToolbar,
+.tablePager {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.tableToolbar input {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.table th {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.iconBtn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+
+@media (min-width: 980px) {
+  .split {
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+    align-items: start;
+  }
+}

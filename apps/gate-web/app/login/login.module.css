@@ -1,41 +1,63 @@
 .main {
   min-height: 100svh;
   display: grid;
-  place-items: center;
-  padding: 32px;
+  align-content: start;
+  justify-items: center;
+  padding: 12px 16px 40px;
+}
+
+.top {
+  width: min(440px, 100%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 24px;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  font-size: 1.15rem;
 }
 
 .card {
-  width: min(420px, 100%);
+  width: min(440px, 100%);
   display: grid;
-  gap: 16px;
-  padding: 32px;
-  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
-  border-radius: 16px;
+  gap: 14px;
+  padding: 32px 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
 }
 
-.kicker {
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.7;
+.brand {
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  color: var(--brand);
+}
+
+.card h1 {
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  font-weight: 750;
 }
 
 .lead,
 .hint {
-  opacity: 0.75;
+  color: var(--muted);
   line-height: 1.5;
 }
 
-.hint {
-  font-size: 12px;
-}
-
 .error {
-  color: #b42318;
-  background: #fef3f2;
-  padding: 8px 12px;
-  border-radius: 8px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  padding: 10px 12px;
+  border-radius: 10px;
 }
 
 .form {
@@ -47,23 +69,41 @@
   display: grid;
   gap: 6px;
   font-size: 14px;
+  font-weight: 650;
 }
 
 .form input {
   padding: 12px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
-  background: #111;
-  color: var(--foreground);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--input);
+  color: var(--ink);
+  font-weight: 400;
 }
 
 .form button {
-  margin-top: 8px;
-  padding: 14px;
+  margin-top: 4px;
+  min-height: 48px;
   border: 0;
-  border-radius: 8px;
-  background: var(--foreground);
-  color: var(--background);
-  font-weight: 600;
+  border-radius: 12px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-weight: 700;
+}
+
+.form button:hover {
+  background: var(--brand-hover);
+}
+
+.hint {
+  font-size: 13px;
+}
+
+.hint summary {
   cursor: pointer;
+  font-weight: 650;
+}
+
+.hint p {
+  margin-top: 8px;
 }
