@@ -23,7 +23,7 @@ export function parseVehiclesFromForm(
 ): ParsedVehicle[] | string {
   const count = Number(formData.get("vehicle_count") ?? 0);
   if (!Number.isInteger(count) || count < 0 || count > 8) {
-    return "Demasiados vehículos en el pase.";
+    return "Demasiados autos.";
   }
 
   const vehicles: ParsedVehicle[] = [];
@@ -73,6 +73,23 @@ export function parseVehiclesFromForm(
       }
 
       passengers.push({ fullName, dni, isDriver });
+    }
+
+    const guestName = String(formData.get("guest_name") ?? "").trim();
+    const guestDni = String(formData.get("guest_dni") ?? "").trim() || null;
+    const guestAlreadyListed = passengers.some(
+      (passenger) =>
+        passenger.fullName.localeCompare(guestName, undefined, {
+          sensitivity: "base",
+        }) === 0,
+    );
+
+    if (guestName && !guestAlreadyListed) {
+      passengers.unshift({
+        fullName: guestName,
+        dni: guestDni,
+        isDriver: !passengers.some((passenger) => passenger.isDriver),
+      });
     }
 
     if (passengers.length === 0) {

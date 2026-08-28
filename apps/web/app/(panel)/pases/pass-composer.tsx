@@ -2,17 +2,32 @@
 
 import { useMemo, useState } from "react";
 import ui from "@/components/ui.module.css";
+import { Icon } from "@/components/icons";
 import { lotLabel, toLocalInput } from "@/lib/format";
 import { createDoorInvite, createShareInvite } from "./actions";
 import styles from "./pases.module.css";
 
 type Lot = { id: string; lot_number: string; street_name: string | null };
-type PassKind = "visit" | "provider" | "event";
+type PassKind = "visit" | "provider";
 
-const KINDS: Array<{ id: PassKind; label: string; hint: string }> = [
-  { id: "visit", label: "Visita", hint: "Vale 24 horas" },
-  { id: "provider", label: "Proveedor", hint: "Hoy, un solo ingreso" },
-  { id: "event", label: "Evento", hint: "Elegí fecha y hora" },
+const KINDS: Array<{
+  id: PassKind;
+  label: string;
+  hint: string;
+  icon: "person" | "wrench";
+}> = [
+  {
+    id: "visit",
+    label: "Invitado",
+    hint: "24 horas",
+    icon: "person",
+  },
+  {
+    id: "provider",
+    label: "Servicio",
+    hint: "Un ingreso, hasta las 18",
+    icon: "wrench",
+  },
 ];
 
 function windowFor(kind: PassKind) {
@@ -25,14 +40,6 @@ function windowFor(kind: PassKind) {
       to.setDate(to.getDate() + 1);
     }
     return { from, to, singleUse: true };
-  }
-
-  if (kind === "event") {
-    const from = new Date(now);
-    from.setMinutes(0, 0, 0);
-    from.setHours(from.getHours() + 1);
-    const to = new Date(from.getTime() + 4 * 60 * 60 * 1000);
-    return { from, to, singleUse: false };
   }
 
   return {
@@ -49,7 +56,8 @@ export function PassComposer({
   lots: Lot[];
   kind?: PassKind;
 }) {
-  const [selected, setSelected] = useState<PassKind>(kind);
+  const initial = kind === "provider" ? "provider" : "visit";
+  const [selected, setSelected] = useState<PassKind>(initial);
   const [door, setDoor] = useState(false);
   const preset = useMemo(() => windowFor(selected), [selected]);
   const [from, setFrom] = useState(toLocalInput(preset.from));
@@ -68,12 +76,12 @@ export function PassComposer({
 
   return (
     <section className={ui.card}>
-      <h2>Nuevo pase</h2>
-      <p className={ui.muted}>
-        Fecha, tipo y listo. El QR lo completa tu visita, salvo que ya esté en
-        la puerta.
-      </p>
-      <div className={styles.kinds} role="tablist" aria-label="Tipo de pase">
+      <p className={styles.step}>¿Quién entra?</p>
+      <div
+        className={styles.kinds}
+        role="tablist"
+        aria-label="Tipo de invitación"
+      >
         {KINDS.map((item) => (
           <button
             key={item.id}
@@ -83,6 +91,7 @@ export function PassComposer({
             className={selected === item.id ? styles.kindActive : styles.kind}
             onClick={() => choose(item.id)}
           >
+            <Icon name={item.icon} />
             <strong>{item.label}</strong>
             <span>{item.hint}</span>
           </button>
@@ -109,6 +118,7 @@ export function PassComposer({
             </select>
           </label>
         )}
+        <p className={styles.step}>Hasta cuándo</p>
         <div className={ui.formRow}>
           <label>
             Desde
@@ -131,6 +141,15 @@ export function PassComposer({
             />
           </label>
         </div>
+        <p className={styles.step}>Entrega</p>
+        <label className={ui.check}>
+          <input
+            type="checkbox"
+            checked={door}
+            onChange={(event) => setDoor(event.target.checked)}
+          />
+          Ya está en la puerta
+        </label>
         {door ? (
           <label>
             Nombre de quien entra
@@ -148,18 +167,10 @@ export function PassComposer({
             checked={singleUse}
             onChange={(event) => setSingleUse(event.target.checked)}
           />
-          Un solo uso
-        </label>
-        <label className={ui.check}>
-          <input
-            type="checkbox"
-            checked={door}
-            onChange={(event) => setDoor(event.target.checked)}
-          />
-          Ya está en la puerta
+          Un solo ingreso
         </label>
         <button className={ui.button} type="submit">
-          {door ? "Generar QR" : "Crear pase"}
+          {door ? "Generar QR" : "Crear y compartir"}
         </button>
       </form>
     </section>

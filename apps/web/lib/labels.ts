@@ -29,6 +29,20 @@ export function accessActionLabel(actionType: string) {
   return ACCESS_ACTION_LABEL[actionType] ?? actionType;
 }
 
+export function accessActionShort(actionType: string) {
+  if (actionType === "IN_COMPLEX" || actionType === "IN_PROPERTY") {
+    return "Entró";
+  }
+  if (actionType === "EXITED") {
+    return "Salió";
+  }
+  return accessActionLabel(actionType);
+}
+
+export function isExitAction(actionType: string) {
+  return actionType === "EXITED";
+}
+
 export function gateTypeLabel(type: string) {
   return GATE_TYPE_LABEL[type] ?? type;
 }
@@ -71,9 +85,9 @@ export function passStatus(input: {
 }
 
 export const PASS_STATUS_LABEL: Record<PassStatus, string> = {
-  waiting: "Esperando datos",
-  active: "Activo",
+  waiting: "Pendiente",
+  active: "Vigente",
   scheduled: "Programado",
   expired: "Vencido",
-  revoked: "Revocado",
+  revoked: "Cancelado",
 };

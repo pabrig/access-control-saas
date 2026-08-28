@@ -288,7 +288,7 @@ export async function validateAccess(
     actionType,
     invitation: {
       id: invitation.id,
-      guestName: invitation.guest_name ?? "Visita",
+      guestName: invitation.guest_name ?? "Invitado",
       guestDni: invitation.guest_dni,
       propertyId: invitation.property_id,
       lotNumber: property?.lot_number ?? "",

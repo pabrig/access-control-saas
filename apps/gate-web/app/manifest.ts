@@ -2,12 +2,12 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Access Gate",
-    short_name: "Barrera",
-    description: "Escaneo de invitaciones QR en barrera",
+    name: "Acceso",
+    short_name: "Acceso",
+    description: "Validá el QR en la puerta",
     start_url: "/scan",
     display: "standalone",
-    background_color: "#0a0a0a",
-    theme_color: "#0a0a0a",
+    background_color: "#f3efe6",
+    theme_color: "#f3efe6",
   };
 }

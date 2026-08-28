@@ -4,10 +4,14 @@ import { useMemo, useState } from "react";
 import ui from "./ui.module.css";
 
 export type TableColumn<T> = {
-  key: keyof T | string;
+  key: keyof T & string;
   header: string;
-  value: (row: T) => string;
 };
+
+function cellValue<T>(row: T, key: keyof T) {
+  const value = row[key];
+  return value == null ? "" : String(value);
+}
 
 export function DataTable<T extends { id: string }>({
   rows,
@@ -33,7 +37,7 @@ export function DataTable<T extends { id: string }>({
 
     return rows.filter((row) =>
       columns.some((column) =>
-        column.value(row).toLowerCase().includes(needle),
+        cellValue(row, column.key).toLowerCase().includes(needle),
       ),
     );
   }, [columns, query, rows]);
@@ -50,7 +54,9 @@ export function DataTable<T extends { id: string }>({
     const body = filtered
       .map((row) =>
         columns
-          .map((column) => `"${column.value(row).replaceAll('"', '""')}"`)
+          .map(
+            (column) => `"${cellValue(row, column.key).replaceAll('"', '""')}"`,
+          )
           .join(","),
       )
       .join("\n");
@@ -90,7 +96,7 @@ export function DataTable<T extends { id: string }>({
           <thead>
             <tr>
               {columns.map((column) => (
-                <th key={String(column.key)}>{column.header}</th>
+                <th key={column.key}>{column.header}</th>
               ))}
             </tr>
           </thead>
@@ -103,7 +109,7 @@ export function DataTable<T extends { id: string }>({
               visible.map((row) => (
                 <tr key={row.id}>
                   {columns.map((column) => (
-                    <td key={String(column.key)}>{column.value(row)}</td>
+                    <td key={column.key}>{cellValue(row, column.key)}</td>
                   ))}
                 </tr>
               ))

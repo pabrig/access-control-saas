@@ -1,10 +1,14 @@
 .frame {
-  min-height: 100svh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
 }
 
 .body {
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar {
@@ -26,7 +30,7 @@
   height: 32px;
   border-radius: 10px;
   background: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
   display: grid;
   place-items: center;
   font-size: 14px;
@@ -45,13 +49,22 @@
   align-items: center;
 }
 
+.topActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .logout {
   min-height: 36px;
-  padding: 0 12px;
+  min-width: 36px;
+  padding: 0 10px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--surface);
-  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mobileNav {
@@ -77,12 +90,15 @@
 .chipActive {
   background: var(--brand);
   border-color: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
 }
 
 .main {
   padding: 24px 16px 64px;
+  width: 100%;
   max-width: 1080px;
+  min-width: 0;
+  flex: 1;
 }
 
 .tabBar {
@@ -92,6 +108,12 @@
 @media (min-width: 900px) {
   .frame {
     grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 
   .sidebar {
@@ -101,22 +123,35 @@
     padding: 24px 18px;
     border-right: 1px solid var(--line);
     background: color-mix(in srgb, var(--surface) 70%, transparent);
-    position: sticky;
-    top: 0;
-    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .brand {
+    flex-shrink: 0;
   }
 
   .top {
     display: none;
   }
 
+  .body {
+    min-height: 0;
+    overflow: auto;
+  }
+
   .main {
-    padding: 36px 40px 80px;
+    padding: 36px 40px 48px;
+    max-width: none;
   }
 
   .nav {
     display: grid;
+    align-content: start;
     gap: 4px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
   }
 
   .navLink,
@@ -124,6 +159,9 @@
     padding: 10px 12px;
     border-radius: 12px;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
   .navActive {
@@ -133,6 +171,7 @@
 
   .user {
     margin-top: auto;
+    flex-shrink: 0;
     display: grid;
     gap: 12px;
     font-size: 14px;
@@ -154,6 +193,10 @@
     border-radius: 10px;
     border: 1px solid var(--line);
     background: var(--surface);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
 }
 
@@ -173,7 +216,7 @@
     bottom: 0;
     z-index: 6;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 4px;
     padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--surface) 92%, transparent);
@@ -183,12 +226,15 @@
 
   .tab,
   .tabActive {
-    min-height: 48px;
+    min-height: 56px;
     display: grid;
-    place-items: center;
+    justify-items: center;
+    align-content: center;
+    gap: 2px;
     border-radius: 12px;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
+    letter-spacing: -0.01em;
   }
 
   .tabActive {

@@ -4,11 +4,25 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/login/actions";
+import { Icon } from "@/components/icons";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { roleLabel } from "@/lib/labels";
 import type { Role } from "@/lib/session";
 import styles from "./shell.module.css";
 
 type NavItem = { href: string; label: string };
+
+const NAV_ICON = {
+  "/": "home",
+  "/pases": "users",
+  "/reservas": "calendar",
+  "/movimientos": "clock",
+  "/lotes": "home",
+  "/barrios": "home",
+  "/personas": "users",
+  "/barreras": "car",
+  "/turnos": "clock",
+} as const;
 
 export function AppShell({
   firstName,
@@ -28,13 +42,24 @@ export function AppShell({
   const pathname = usePathname();
   const tabs =
     variant === "resident"
-      ? nav.filter((item) => ["/", "/pases", "/reservas"].includes(item.href))
+      ? nav.filter((item) =>
+          ["/", "/pases", "/reservas", "/movimientos"].includes(item.href),
+        )
       : nav;
 
   function isActive(href: string) {
-    return href === "/"
-      ? pathname === "/"
-      : pathname === href || pathname.startsWith(`${href}/`);
+    if (href === "/") {
+      return pathname === "/" || pathname.startsWith("/complejos");
+    }
+    if (href === "/lotes") {
+      return (
+        pathname === "/lotes" ||
+        pathname.startsWith("/lotes/") ||
+        pathname === "/barrios" ||
+        pathname.startsWith("/barrios/")
+      );
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
   }
 
   return (
@@ -61,6 +86,10 @@ export function AppShell({
               }
               href={item.href}
             >
+              <Icon
+                name={NAV_ICON[item.href as keyof typeof NAV_ICON] ?? "home"}
+                size={18}
+              />
               {item.label}
             </Link>
           ))}
@@ -71,8 +100,12 @@ export function AppShell({
             <span>{roleLabel(role)}</span>
             <span>{email}</span>
           </p>
+          <ThemeToggle />
           <form action={signOut}>
-            <button type="submit">Salir</button>
+            <button type="submit">
+              <Icon name="logout" size={16} />
+              Salir
+            </button>
           </form>
         </div>
       </aside>
@@ -81,11 +114,18 @@ export function AppShell({
           <Link className={styles.brandMobile} href="/">
             Acceso
           </Link>
-          <form action={signOut}>
-            <button className={styles.logout} type="submit">
-              Salir
-            </button>
-          </form>
+          <div className={styles.topActions}>
+            <ThemeToggle />
+            <form action={signOut}>
+              <button
+                className={styles.logout}
+                type="submit"
+                aria-label="Salir"
+              >
+                <Icon name="logout" size={18} />
+              </button>
+            </form>
+          </div>
           {variant === "ops" ? (
             <nav className={styles.mobileNav} aria-label="Secciones">
               {nav.map((item) => (
@@ -111,6 +151,9 @@ export function AppShell({
                 className={isActive(item.href) ? styles.tabActive : styles.tab}
                 href={item.href}
               >
+                <Icon
+                  name={NAV_ICON[item.href as keyof typeof NAV_ICON] ?? "home"}
+                />
                 {item.label}
               </Link>
             ))}

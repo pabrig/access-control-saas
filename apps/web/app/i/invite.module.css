@@ -1,8 +1,21 @@
 .shell {
   min-height: 100dvh;
-  padding: 16px 16px 32px;
-  background: #0b1220;
-  color: #f7f4ee;
+  padding: 12px 16px 40px;
+}
+
+.top {
+  width: min(100%, 440px);
+  margin: 0 auto 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+}
+
+.brand {
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  font-size: 1.15rem;
 }
 
 .page {
@@ -14,22 +27,31 @@
 
 .kicker {
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-weight: 750;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #b7c0ce;
+  color: var(--muted);
 }
 
 .page h1,
 .credential h1 {
-  font-size: clamp(1.7rem, 6vw, 2.1rem);
+  font-size: clamp(1.55rem, 6vw, 2rem);
   letter-spacing: -0.04em;
-  line-height: 1.1;
+  line-height: 1.12;
+  font-weight: 750;
 }
 
 .lead {
-  color: #c5cdd8;
+  color: var(--muted);
   font-size: 15px;
+}
+
+.when {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 650;
 }
 
 .credential {
@@ -39,21 +61,14 @@
   text-align: center;
 }
 
-.place {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #7dd3c0;
-}
-
 .qr {
   margin: 0;
   width: 100%;
   padding: 18px 16px 14px;
   background: #fff;
   color: #1c1915;
-  border-radius: 24px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
   display: grid;
   justify-items: center;
   gap: 10px;
@@ -63,62 +78,47 @@
   font-size: 13px;
   color: #5f584e;
   text-align: center;
-  max-width: 28ch;
 }
 
 .actions {
   width: 100%;
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.primary,
-.secondary,
-.wallet,
-.page :global(button) {
-  min-height: 48px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 16px;
+.action {
+  min-height: 64px;
   border-radius: 14px;
-  font-weight: 700;
-}
-
-.primary {
-  background: #0c5c4c;
-  color: #fff;
-}
-
-.secondary,
-.wallet {
-  background: transparent;
-  color: #f7f4ee;
-  border: 1px solid #314056;
-}
-
-.walletHint {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
   font-size: 12px;
-  color: #9aa6b8;
-  max-width: 36ch;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.action svg {
+  color: var(--brand);
 }
 
 .claim {
-  background: #fffcf7;
-  color: #1c1915;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
   padding: 20px;
-  border-radius: 20px;
+  border-radius: var(--radius);
+}
+
+.claim :global(button[type="submit"]) {
+  width: 100%;
+  min-height: 48px;
 }
 
 .page :global(input),
 .page :global(select) {
   min-height: 44px;
-}
-
-:global(html[data-pass="ready"]) {
-  background: #0b1220;
-}
-
-:global(html[data-pass="ready"] body) {
-  background: #0b1220;
 }

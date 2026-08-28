@@ -1,6 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import {
+  assignedNeighborhoodId,
+  isNeighborhoodAdmin,
+  requireAdmin,
+} from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 function fail(message: string): never {
@@ -8,10 +13,21 @@ function fail(message: string): never {
 }
 
 export async function createGate(formData: FormData) {
+  const session = await requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
-  const type = String(formData.get("type") ?? "");
-  const complexId = String(formData.get("complex_id") ?? "") || null;
-  const neighborhoodId = String(formData.get("neighborhood_id") ?? "") || null;
+  let type = String(formData.get("type") ?? "");
+  let complexId = String(formData.get("complex_id") ?? "") || null;
+  let neighborhoodId = String(formData.get("neighborhood_id") ?? "") || null;
+
+  if (isNeighborhoodAdmin(session)) {
+    const assigned = assignedNeighborhoodId(session);
+    if (!assigned) {
+      fail("No tenés un barrio asignado.");
+    }
+    type = "INTERNAL_NEIGHBORHOOD";
+    neighborhoodId = assigned;
+    complexId = null;
+  }
 
   if (!name || !type) {
     fail("La barrera necesita nombre y tipo.");

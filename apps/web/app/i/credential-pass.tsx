@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { Icon } from "@/components/icons";
 import styles from "./invite.module.css";
 
 function mapsQuery(input: {
@@ -29,37 +30,35 @@ export function CredentialPass({
   streetName: string | null;
   validLabel: string;
 }) {
-  const [wake, setWake] = useState("Mantené el brillo al máximo");
+  const [wake, setWake] = useState("Subí el brillo para el QR.");
   const place = mapsQuery({ neighborhoodName, lotNumber, streetName });
   const encoded = encodeURIComponent(place);
 
   useEffect(() => {
-    document.documentElement.dataset.pass = "ready";
     let sentinel: WakeLockSentinel | null = null;
 
     async function lock() {
       try {
         sentinel = await navigator.wakeLock?.request("screen");
         if (sentinel) {
-          setWake("Pantalla activa. Subí el brillo si el QR no se lee.");
+          setWake("Pantalla activa.");
         }
       } catch {
-        setWake("Subí el brillo al máximo para que se lea el QR.");
+        setWake("Subí el brillo para el QR.");
       }
     }
 
     void lock();
 
     return () => {
-      delete document.documentElement.dataset.pass;
       void sentinel?.release();
     };
   }, []);
 
-  async function sharePass() {
+  async function saveQr() {
     if (navigator.share) {
       await navigator.share({
-        title: `Pase · ${neighborhoodName}`,
+        title: `Acceso · ${neighborhoodName}`,
         text: `${guestName} · ${place}`,
       });
       return;
@@ -67,17 +66,19 @@ export function CredentialPass({
 
     const link = document.createElement("a");
     link.href = qrDataUrl;
-    link.download = `pase-${lotNumber}.png`;
+    link.download = `acceso-${lotNumber}.png`;
     link.click();
   }
 
   return (
     <article className={styles.credential}>
-      <p className={styles.place}>{neighborhoodName}</p>
+      <p className={styles.kicker}>{neighborhoodName}</p>
       <h1>{guestName}</h1>
       <p className={styles.lead}>
         {streetName ? `${streetName} · ` : ""}Lote {lotNumber}
-        <br />
+      </p>
+      <p className={styles.when}>
+        <Icon name="clock" size={18} />
         {validLabel}
       </p>
       <figure className={styles.qr}>
@@ -92,33 +93,32 @@ export function CredentialPass({
       </figure>
       <div className={styles.actions}>
         <a
-          className={styles.primary}
+          className={styles.action}
           href={`https://www.google.com/maps/search/?api=1&query=${encoded}`}
           rel="noreferrer"
           target="_blank"
         >
-          Google Maps
+          <Icon name="pin" />
+          Maps
         </a>
         <a
-          className={styles.secondary}
+          className={styles.action}
           href={`https://waze.com/ul?q=${encoded}&navigate=yes`}
           rel="noreferrer"
           target="_blank"
         >
+          <Icon name="car" />
           Waze
         </a>
         <button
-          className={styles.wallet}
+          className={styles.action}
           type="button"
-          onClick={() => void sharePass()}
+          onClick={() => void saveQr()}
         >
-          Apple Wallet / Google Wallet
+          <Icon name="qr" />
+          Guardar
         </button>
       </div>
-      <p className={styles.walletHint}>
-        Guardá o compartí el QR. En la web no se emite un pase nativo de Wallet
-        sin la cuenta del barrio.
-      </p>
     </article>
   );
 }

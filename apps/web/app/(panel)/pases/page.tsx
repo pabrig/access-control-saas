@@ -1,29 +1,93 @@
-import Image from "next/image";
-import QRCode from "qrcode";
-import { Badge, Banner, Empty, PageHeader } from "@/components/ui";
+import Link from "next/link";
+import { Banner, Empty, PageHeader, Stat } from "@/components/ui";
+import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
-import { formatDateTime, lotLabel, personName } from "@/lib/format";
-import { accessActionLabel, passStatus } from "@/lib/labels";
-import {
-  inviteShareUrl,
-  mailShareHref,
-  publicAppUrl,
-  whatsappShareHref,
-} from "@/lib/invite-url";
+import { isBookingLabel } from "@/lib/amenities";
+import { passStatus } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
+import { canManageStructure, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { CopyLinkButton } from "./copy-link-button";
+import { GuestRow } from "./guest-row";
 import { PassComposer } from "./pass-composer";
-import { revokeInvitation } from "./actions";
+import { ScopeFilter } from "../scope-filter";
+import ops from "../ops-overview.module.css";
 import styles from "./pases.module.css";
+
+type InvitationRow = {
+  id: string;
+  guest_name: string | null;
+  valid_from: string;
+  valid_to: string;
+  is_revoked: boolean;
+  is_single_use: boolean;
+  status: "DRAFT" | "READY";
+  neighborhood_id: string;
+  neighborhoods:
+    | {
+        name: string;
+        complex_id: string | null;
+        complexes:
+          | { id: string; name: string }
+          | { id: string; name: string }[]
+          | null;
+      }
+    | {
+        name: string;
+        complex_id: string | null;
+        complexes:
+          | { id: string; name: string }
+          | { id: string; name: string }[]
+          | null;
+      }[]
+    | null;
+};
+
+function placeOf(row: InvitationRow) {
+  const neighborhood = asOne<{
+    name: string;
+    complex_id: string | null;
+    complexes:
+      | { id: string; name: string }
+      | { id: string; name: string }[]
+      | null;
+  }>(row.neighborhoods);
+  const complex = asOne<{ id: string; name: string }>(neighborhood?.complexes);
+  return {
+    barrioId: row.neighborhood_id,
+    barrioName: neighborhood?.name ?? "Barrio",
+    complexId: neighborhood?.complex_id ?? complex?.id ?? null,
+    complexName: complex?.name ?? null,
+  };
+}
+
+function isLive(row: InvitationRow) {
+  const status = passStatus(row);
+  return status === "active" || status === "scheduled" || status === "waiting";
+}
+
+function isPast(row: InvitationRow) {
+  const status = passStatus(row);
+  return status === "expired" || status === "revoked";
+}
 
 export default async function PasesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string; tipo?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    created?: string;
+    updated?: string;
+    tipo?: string;
+    nuevo?: string;
+    barrio?: string;
+    grupo?: string;
+    ver?: string;
+  }>;
 }) {
-  const { error: formError, created, tipo } = await searchParams;
-  const origin = await publicAppUrl();
+  const flash = await searchParams;
+  const creating = flash.nuevo === "1" || Boolean(flash.tipo);
+  const session = await requireSession();
+  const structureAdmin = canManageStructure(session);
   const supabase = await createClient();
 
   const [{ data: invitations, error }, { data: properties }] =
@@ -31,7 +95,7 @@ export default async function PasesPage({
       supabase
         .from("invitations")
         .select(
-          "id, guest_name, guest_dni, valid_from, valid_to, is_revoked, is_single_use, qr_token, share_token, status, properties(lot_number, street_name), invitation_vehicles(id, plate_display, plate_format, color, invitation_passengers(full_name, dni, is_driver))",
+          "id, guest_name, valid_from, valid_to, is_revoked, is_single_use, status, neighborhood_id, neighborhoods(name, complex_id, complexes(id, name))",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -40,223 +104,317 @@ export default async function PasesPage({
         .order("lot_number"),
     ]);
 
-  type MovementLog = {
-    id: string;
-    action_type: string;
-    timestamp: string;
-    invitation_id: string | null;
-    gates: unknown;
-    profiles: unknown;
-  };
-
-  const invitationIds = (invitations ?? []).map((invitation) => invitation.id);
-  const { data: logs } =
-    invitationIds.length > 0
-      ? await supabase
-          .from("access_logs")
-          .select(
-            "id, action_type, timestamp, invitation_id, gates(name), profiles!access_logs_security_user_id_fkey(first_name, last_name)",
-          )
-          .in("invitation_id", invitationIds)
-          .order("timestamp", { ascending: true })
-      : { data: [] as MovementLog[] };
-
-  const logsByInvitation = new Map<string, MovementLog[]>();
-  for (const log of (logs ?? []) as MovementLog[]) {
-    if (!log.invitation_id) {
-      continue;
-    }
-    const current = logsByInvitation.get(log.invitation_id) ?? [];
-    current.push(log);
-    logsByInvitation.set(log.invitation_id, current);
-  }
-
-  const withQr = await Promise.all(
-    (invitations ?? []).map(async (invitation) => ({
-      ...invitation,
-      shareUrl: inviteShareUrl(origin, invitation.share_token),
-      qrDataUrl: invitation.qr_token
-        ? await QRCode.toDataURL(invitation.qr_token, {
-            margin: 1,
-            width: 168,
-          })
-        : null,
-    })),
-  );
-
   const canCreate = (properties ?? []).length > 0;
   const lots = properties ?? [];
-  const kind =
-    tipo === "proveedor" ? "provider" : tipo === "evento" ? "event" : "visit";
+  const kind = flash.tipo === "proveedor" ? "provider" : "visit";
+  const people = ((invitations ?? []) as InvitationRow[]).filter(
+    (row) => !isBookingLabel(row.guest_name),
+  );
+  const live = people.filter(isLive);
+  const history = people.filter(isPast);
+
+  if (creating) {
+    return (
+      <>
+        <Link className={ui.backLink} href="/pases">
+          <Icon name="back" size={18} />
+          {structureAdmin ? "Pases" : "Invitados"}
+        </Link>
+        <PageHeader title={structureAdmin ? "Nuevo pase" : "Invitar"} />
+        {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
+        {canCreate ? (
+          <PassComposer key={kind} lots={lots} kind={kind} />
+        ) : (
+          <Empty
+            title="No hay un lote para invitar"
+            description="Pedile al admin que te asigne el lote."
+          />
+        )}
+      </>
+    );
+  }
+
+  if (structureAdmin) {
+    return (
+      <OpsPases
+        error={flash.error}
+        created={flash.created}
+        updated={flash.updated}
+        queryError={error?.message}
+        grupo={flash.grupo}
+        barrioId={flash.barrio}
+        showAll={flash.ver === "1"}
+        people={people}
+        live={live}
+        history={history}
+      />
+    );
+  }
 
   return (
     <>
       <PageHeader
-        kicker="Visitas"
-        title="Pases"
-        description="Invitá con un link. Tu visita completa los datos y el QR aparece en su celular."
+        title="Invitados"
+        actions={
+          canCreate ? (
+            <Link className={ui.button} href="/pases?nuevo=1">
+              <Icon name="plus" size={18} />
+              Invitar
+            </Link>
+          ) : null
+        }
       />
 
-      {formError ? <Banner tone="danger">{formError}</Banner> : null}
-      {created === "share" ? (
-        <Banner>
-          Invitación lista. Mandala por WhatsApp o correo. El QR lo va a ver tu
-          visita.
-        </Banner>
+      {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
+      {flash.created ? (
+        <Banner>Listo. Tocá la tarjeta para compartir.</Banner>
       ) : null}
-      {created === "door" ? (
-        <Banner>Pase en puerta listo. Mostrá el QR en la barrera.</Banner>
-      ) : null}
+      {flash.updated ? <Banner>Guardado.</Banner> : null}
       {error ? <Banner tone="danger">{error.message}</Banner> : null}
 
-      {canCreate ? (
-        <PassComposer key={kind} lots={lots} kind={kind} />
-      ) : (
+      {live.length === 0 ? (
         <Empty
-          title="No hay un lote para invitar"
-          description="Si sos propietario y no ves tu lote, pedile al admin que te lo asigne."
-        />
-      )}
-
-      {withQr.length === 0 ? (
-        <Empty
-          title="Todavía no hay pases"
-          description="Creá un link y mandáselo a tu visita."
+          title="Nadie está invitado"
+          description="Tocá Invitar para mandar un link."
         />
       ) : (
         <ul className={styles.list}>
-          {withQr.map((invitation) => {
-            const property = asOne<{
-              lot_number: string;
-              street_name: string | null;
-            }>(invitation.properties);
-            const movements = logsByInvitation.get(invitation.id) ?? [];
-            const status = passStatus(invitation);
-            const ready = invitation.status === "READY";
-
-            return (
-              <li className={styles.pass} key={invitation.id}>
-                <div className={styles.meta}>
-                  <div className={styles.passHead}>
-                    <h2>{invitation.guest_name ?? "Esperando a la visita"}</h2>
-                    <Badge status={status} />
-                  </div>
-                  <p>
-                    {property ? lotLabel(property) : "Lote"}
-                    {invitation.guest_dni
-                      ? ` · DNI ${invitation.guest_dni}`
-                      : ""}
-                    {invitation.is_single_use ? " · un uso" : ""}
-                  </p>
-                  <p className={ui.muted}>
-                    {formatDateTime(invitation.valid_from)} →{" "}
-                    {formatDateTime(invitation.valid_to)}
-                  </p>
-                  <div className={styles.share}>
-                    <a
-                      className={ui.button}
-                      href={whatsappShareHref(invitation.shareUrl, ready)}
-                    >
-                      WhatsApp
-                    </a>
-                    <a
-                      className={ui.buttonSecondary}
-                      href={mailShareHref(invitation.shareUrl, ready)}
-                    >
-                      Correo
-                    </a>
-                    <CopyLinkButton url={invitation.shareUrl} />
-                  </div>
-                  {(invitation.invitation_vehicles ?? []).length > 0 ? (
-                    <section>
-                      <h3>Autos</h3>
-                      <ul className={styles.vehicles}>
-                        {(invitation.invitation_vehicles ?? []).map(
-                          (vehicle) => (
-                            <li key={vehicle.id}>
-                              <strong>{vehicle.plate_display}</strong>
-                              {vehicle.color ? ` · ${vehicle.color}` : ""}
-                              <span>
-                                {(vehicle.invitation_passengers ?? [])
-                                  .map((passenger) =>
-                                    passenger.is_driver
-                                      ? `${passenger.full_name} (conductor)`
-                                      : passenger.full_name,
-                                  )
-                                  .join(" · ")}
-                              </span>
-                            </li>
-                          ),
-                        )}
-                      </ul>
-                    </section>
-                  ) : null}
-                  {status === "active" ||
-                  status === "scheduled" ||
-                  status === "waiting" ? (
-                    <form action={revokeInvitation}>
-                      <input type="hidden" name="id" value={invitation.id} />
-                      <button className={ui.buttonDanger} type="submit">
-                        Revocar pase
-                      </button>
-                    </form>
-                  ) : null}
-                  <section>
-                    <h3>Qué pasó</h3>
-                    {movements.length === 0 ? (
-                      <p className={ui.muted}>
-                        {ready
-                          ? "Todavía no lo escanearon."
-                          : "La visita todavía no completó el pase."}
-                      </p>
-                    ) : (
-                      <ol className={styles.timeline}>
-                        {movements.map((log) => {
-                          const gate = asOne<{ name: string }>(log.gates);
-                          const guard = asOne<{
-                            first_name: string;
-                            last_name: string;
-                          }>(log.profiles);
-
-                          return (
-                            <li key={log.id}>
-                              <strong>
-                                {accessActionLabel(log.action_type)}
-                              </strong>
-                              <span>
-                                {formatDateTime(log.timestamp)}
-                                {gate?.name ? ` · ${gate.name}` : ""}
-                                {guard ? ` · ${personName(guard)}` : ""}
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    )}
-                  </section>
-                </div>
-                {invitation.qrDataUrl ? (
-                  <figure className={styles.qr}>
-                    <Image
-                      alt={`QR de ${invitation.guest_name ?? "pase"}`}
-                      height={168}
-                      src={invitation.qrDataUrl}
-                      unoptimized
-                      width={168}
-                    />
-                    <figcaption>Mostrá este código en la barrera</figcaption>
-                  </figure>
-                ) : (
-                  <p className={styles.waitingQr}>
-                    El QR se genera en el celular de la visita cuando completa
-                    el link.
-                  </p>
-                )}
-              </li>
-            );
-          })}
+          {live.map((invitation) => (
+            <GuestRow key={invitation.id} invitation={invitation} />
+          ))}
         </ul>
       )}
+
+      {history.length > 0 ? (
+        <section>
+          <h2 className={ui.groupTitle}>Anteriores</h2>
+          <ul className={styles.list}>
+            {history.map((invitation) => (
+              <GuestRow key={invitation.id} invitation={invitation} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </>
+  );
+}
+
+function OpsPases({
+  error,
+  created,
+  updated,
+  queryError,
+  grupo,
+  barrioId,
+  showAll,
+  people,
+  live,
+  history,
+}: {
+  error?: string;
+  created?: string;
+  updated?: string;
+  queryError?: string;
+  grupo?: string;
+  barrioId?: string;
+  showAll: boolean;
+  people: InvitationRow[];
+  live: InvitationRow[];
+  history: InvitationRow[];
+}) {
+  const byBarrio = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      complexId: string | null;
+      complexName: string | null;
+      live: number;
+      past: number;
+    }
+  >();
+
+  for (const row of people) {
+    const place = placeOf(row);
+    const current = byBarrio.get(place.barrioId) ?? {
+      id: place.barrioId,
+      name: place.barrioName,
+      complexId: place.complexId,
+      complexName: place.complexName,
+      live: 0,
+      past: 0,
+    };
+    if (isLive(row)) {
+      current.live += 1;
+    } else if (isPast(row)) {
+      current.past += 1;
+    }
+    byBarrio.set(place.barrioId, current);
+  }
+
+  const barrios = [...byBarrio.values()].sort(
+    (left, right) =>
+      right.live - left.live || left.name.localeCompare(right.name),
+  );
+  const groups = [
+    ...new Map(
+      barrios
+        .filter((item) => item.complexId && item.complexName)
+        .map((item) => [
+          item.complexId as string,
+          {
+            id: item.complexId as string,
+            name: item.complexName as string,
+            count: 0,
+          },
+        ]),
+    ).values(),
+  ].map((group) => ({
+    ...group,
+    count: barrios.filter((item) => item.complexId === group.id).length,
+  }));
+  const independents = barrios.filter((item) => !item.complexId).length;
+  const scopedBarrios =
+    grupo === "independent"
+      ? barrios.filter((item) => !item.complexId)
+      : grupo
+        ? barrios.filter((item) => item.complexId === grupo)
+        : barrios;
+
+  const selected = barrioId
+    ? barrios.find((item) => item.id === barrioId)
+    : null;
+  const scopedPeople = selected
+    ? people.filter((row) => row.neighborhood_id === selected.id)
+    : grupo === "independent"
+      ? people.filter((row) => !placeOf(row).complexId)
+      : grupo
+        ? people.filter((row) => placeOf(row).complexId === grupo)
+        : people;
+  const scopedLive = scopedPeople.filter(isLive);
+  const scopedPast = scopedPeople.filter(isPast);
+
+  if (selected || showAll) {
+    const title = selected ? selected.name : "Listado completo";
+    const backHref = selected && grupo ? `/pases?grupo=${grupo}` : "/pases";
+
+    return (
+      <>
+        <Link className={ui.backLink} href={backHref}>
+          <Icon name="back" size={18} />
+          Pases
+        </Link>
+        <PageHeader
+          kicker={selected?.complexName ?? "Revisión"}
+          title={title}
+          description="Detalle de pases de este alcance. El resumen está en Pases."
+          actions={
+            <Link className={ui.button} href="/pases?nuevo=1">
+              <Icon name="plus" size={18} />
+              Nuevo pase
+            </Link>
+          }
+        />
+        {error ? <Banner tone="danger">{error}</Banner> : null}
+        {created ? (
+          <Banner>Listo. Tocá la tarjeta para compartir.</Banner>
+        ) : null}
+        {updated ? <Banner>Guardado.</Banner> : null}
+        {queryError ? <Banner tone="danger">{queryError}</Banner> : null}
+
+        {scopedLive.length === 0 ? (
+          <Empty
+            title="No hay pases vigentes"
+            description="Los vencidos o revocados quedan en anteriores."
+          />
+        ) : (
+          <ul className={styles.list}>
+            {scopedLive.map((invitation) => (
+              <GuestRow key={invitation.id} invitation={invitation} />
+            ))}
+          </ul>
+        )}
+
+        {scopedPast.length > 0 ? (
+          <details className={ops.history}>
+            <summary>Anteriores · {scopedPast.length}</summary>
+            <ul className={styles.list}>
+              {scopedPast.map((invitation) => (
+                <GuestRow key={invitation.id} invitation={invitation} />
+              ))}
+            </ul>
+          </details>
+        ) : null}
+      </>
+    );
+  }
+
+  const scheduled = live.filter(
+    (row) => passStatus(row) === "scheduled",
+  ).length;
+  const active = live.length - scheduled;
+
+  return (
+    <div className={ops.board}>
+      <PageHeader
+        kicker="Operación"
+        title="Pases"
+        description="Resumen por barrio. Entrá a uno para revisar el detalle."
+        actions={
+          <>
+            <Link className={ops.quietLink} href="/pases?ver=1">
+              Ver listado completo
+            </Link>
+            <Link className={ui.button} href="/pases?nuevo=1">
+              <Icon name="plus" size={18} />
+              Nuevo pase
+            </Link>
+          </>
+        }
+      />
+      {error ? <Banner tone="danger">{error}</Banner> : null}
+      {created ? <Banner>Listo. Tocá la tarjeta para compartir.</Banner> : null}
+      {updated ? <Banner>Guardado.</Banner> : null}
+      {queryError ? <Banner tone="danger">{queryError}</Banner> : null}
+
+      <section className={ui.stats} aria-label="Resumen de pases">
+        <Stat label="Vigentes" value={active} />
+        <Stat label="Programados" value={scheduled} />
+        <Stat label="Anteriores" value={history.length} />
+      </section>
+
+      <ScopeFilter groups={groups} independents={independents} />
+
+      {scopedBarrios.length === 0 ? (
+        <Empty
+          title="No hay pases en este alcance"
+          description="Cuando un residente invite, el barrio aparece acá."
+        />
+      ) : (
+        <ul className={ops.cards}>
+          {scopedBarrios.map((barrio) => (
+            <li key={barrio.id}>
+              <Link className={ops.card} href={`/pases?barrio=${barrio.id}`}>
+                <div className={ops.cardTop}>
+                  <h2>{barrio.name}</h2>
+                  <span
+                    className={
+                      barrio.complexName ? ops.flagComplex : ops.flagSolo
+                    }
+                  >
+                    {barrio.complexName ?? "Independiente"}
+                  </span>
+                </div>
+                <p className={ops.cardMeta}>
+                  {barrio.live} {barrio.live === 1 ? "vigente" : "vigentes"}
+                  {barrio.past > 0 ? ` · ${barrio.past} anteriores` : ""}
+                </p>
+                <span className={ops.cardAction}>Revisar</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

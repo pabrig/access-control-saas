@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/lib/supabase/server";
 import { signIn } from "./actions";
 import styles from "./login.module.css";
@@ -21,12 +22,15 @@ export default async function LoginPage({
 
   return (
     <main className={styles.main}>
+      <div className={styles.top}>
+        <p className={styles.wordmark}>Acceso</p>
+        <ThemeToggle />
+      </div>
       <section className={styles.card}>
-        <p className={styles.kicker}>Barrera</p>
-        <h1>Turno de seguridad</h1>
+        <p className={styles.brand}>Puerta</p>
+        <h1>Entrá a tu turno</h1>
         <p className={styles.lead}>
-          Entrá con la cuenta del guardia. El escáner usa el JWT y el turno
-          activo; la API valida el QR.
+          Con tu cuenta validás quién entra por esta puerta.
         </p>
         {error ? <p className={styles.error}>{error}</p> : null}
         <form action={signIn} className={styles.form}>
@@ -41,7 +45,7 @@ export default async function LoginPage({
             />
           </label>
           <label>
-            Password
+            Contraseña
             <input
               type="password"
               name="password"
@@ -50,9 +54,13 @@ export default async function LoginPage({
               defaultValue="password123"
             />
           </label>
-          <button type="submit">Iniciar turno</button>
+          <button type="submit">Entrar</button>
         </form>
-        <p className={styles.hint}>Seed: security@example.com / password123</p>
+        <details className={styles.hint}>
+          <summary>Cuenta de prueba</summary>
+          <p>security@example.com</p>
+          <p>Contraseña: password123</p>
+        </details>
       </section>
     </main>
   );

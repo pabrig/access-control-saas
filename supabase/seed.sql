@@ -124,6 +124,20 @@ begin
     ('10000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000011', '2', 'Calle Robles')
   on conflict (id) do nothing;
 
+  update public.properties
+  set
+    block_name = 'A',
+    phone = '11 5555-0101',
+    notes = 'Frente al SUM'
+  where id = '10000000-0000-0000-0000-000000000021';
+
+  update public.properties
+  set
+    block_name = 'A',
+    phone = '11 5555-0102',
+    notes = 'Esquina con Calle Robles'
+  where id = '10000000-0000-0000-0000-000000000022';
+
   insert into public.gates (id, complex_id, neighborhood_id, name, type)
   values
     (

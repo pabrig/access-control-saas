@@ -162,7 +162,7 @@ export async function lookupAccess(
 
     matches.push({
       qrToken: row.qr_token,
-      guestName: row.guest_name ?? "Visita",
+      guestName: row.guest_name ?? "Invitado",
       guestDni: row.guest_dni,
       plateDisplay: matchedVehicle?.plate_display ?? null,
       lotNumber: property?.lot_number ?? "",

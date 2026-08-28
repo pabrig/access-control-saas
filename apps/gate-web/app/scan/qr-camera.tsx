@@ -34,7 +34,7 @@ function cameraBlockReason(): string | null {
   }
 
   if (!window.isSecureContext) {
-    return "El celular bloquea la cámara en HTTP. localhost en la Mac sí es seguro; la IP de la Wi‑Fi no. Usá el buscador, o abrí el escáner por HTTPS.";
+    return "La cámara pide HTTPS. En la Mac, localhost alcanza; si no, usá el buscador.";
   }
 
   if (!navigator.mediaDevices?.getUserMedia) {
@@ -109,15 +109,11 @@ export function QrCamera({
       } catch (error) {
         const name = error instanceof DOMException ? error.name : "";
         if (name === "NotAllowedError") {
-          setStatus(
-            "Negaste el permiso de cámara. Activalo en Ajustes del navegador.",
-          );
+          setStatus("Negaste la cámara. Activalo en Ajustes del navegador.");
         } else if (name === "NotFoundError") {
           setStatus("No hay una cámara disponible en este dispositivo.");
         } else {
-          setStatus(
-            "No se pudo abrir la cámara. En HTTP el celular la bloquea; usá el buscador o HTTPS.",
-          );
+          setStatus("No se pudo abrir la cámara. Usá el buscador o HTTPS.");
         }
         return;
       }
@@ -210,7 +206,7 @@ export function QrCamera({
         </button>
       ) : null}
       <p className={styles.viewfinderHint}>
-        {armed ? "Apuntá al QR de la visita" : "La cámara se pide al tocar"}
+        {armed ? "Apuntá al QR" : "Tocá para usar la cámara"}
       </p>
     </div>
   );
