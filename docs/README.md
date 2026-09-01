@@ -51,3 +51,7 @@ Seed logins (password `password123`):
 - `complex.admin@example.com` — both lots in Los Robles
 - `superadmin@example.com` — everything
 - `security@example.com` — active shift on the main gate
+
+## F&F production deploy
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for Vercel (web + gate-web), Render/Docker (API), Supabase auth URLs, and smoke tests.

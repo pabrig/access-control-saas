@@ -157,6 +157,6 @@ app.post("/access/validate", async (req, res) => {
   }
 });
 
-app.listen(env.port, () => {
-  console.log(`API listening on http://127.0.0.1:${env.port}`);
+app.listen(env.port, "0.0.0.0", () => {
+  console.log(`API listening on port ${env.port}`);
 });

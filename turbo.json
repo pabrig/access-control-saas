@@ -12,7 +12,12 @@
         "SUPABASE_URL",
         "SUPABASE_ANON_KEY",
         "SUPABASE_SERVICE_ROLE_KEY",
-        "NEXT_PUBLIC_API_URL"
+        "NEXT_PUBLIC_API_URL",
+        "ACCESS_API_URL",
+        "CORS_ORIGIN",
+        "PORT",
+        "VERCEL_ENV",
+        "NODE_ENV"
       ]
     },
     "lint": {
