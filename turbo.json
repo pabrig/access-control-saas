@@ -8,11 +8,16 @@
       "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"],
       "env": [
         "NEXT_PUBLIC_SUPABASE_URL",
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-        "SUPABASE_URL",
-        "SUPABASE_ANON_KEY",
-        "SUPABASE_SERVICE_ROLE_KEY",
-        "NEXT_PUBLIC_API_URL"
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "SUPABASE_URL",
+      "SUPABASE_ANON_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "NEXT_PUBLIC_API_URL",
+      "SENTRY_DSN",
+      "NEXT_PUBLIC_SENTRY_DSN",
+      "NEXT_RUNTIME",
+      "VERCEL_ENV",
+      "NODE_ENV"
       ]
     },
     "lint": {

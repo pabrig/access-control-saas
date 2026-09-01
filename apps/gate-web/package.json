@@ -13,9 +13,13 @@
   },
   "dependencies": {
     "@repo/db": "workspace:*",
+    "@repo/observability": "workspace:*",
     "@repo/ui": "workspace:*",
+    "@sentry/nextjs": "^10.72.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "jsqr": "^1.4.0",
     "next": "16.2.0",
     "react": "^19.2.0",

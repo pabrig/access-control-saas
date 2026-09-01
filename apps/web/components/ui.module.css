@@ -608,9 +608,84 @@ a.card:hover {
   margin-bottom: 8px;
 }
 
+a:has([data-pending="true"]),
+button:has([data-pending="true"]) {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 @media (min-width: 980px) {
   .split {
     grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
     align-items: start;
+  }
+}
+
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--muted) 12%, var(--surface)) 0%,
+    color-mix(in srgb, var(--muted) 22%, var(--surface)) 45%,
+    color-mix(in srgb, var(--muted) 12%, var(--surface)) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+.pageSkeleton {
+  display: grid;
+  gap: 20px;
+  padding-top: 4px;
+}
+
+.skeletonLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skelHeader {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.skelStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.skelStack {
+  display: grid;
+  gap: 12px;
+}
+
+.button:disabled,
+.buttonSecondary:disabled,
+.buttonDanger:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
   }
 }

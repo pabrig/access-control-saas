@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge, Banner, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
+import { PendingLink } from "@/components/pending-link";
 import ui from "@/components/ui.module.css";
 import { withoutEventPeople } from "@/lib/amenities";
 import { formatRange, formatTime, initials, personName } from "@/lib/format";
@@ -51,18 +52,18 @@ export default async function DashboardPage() {
         <PageHeader title={`Hola, ${session.firstName}`} />
 
         <nav className={ui.quick} aria-label="Acciones rápidas">
-          <Link className={ui.quickLink} href="/credencial">
+          <PendingLink className={ui.quickLink} href="/credencial">
             <Icon name="qr" />
             Credencial
-          </Link>
-          <Link className={ui.quickLink} href="/pases?nuevo=1">
+          </PendingLink>
+          <PendingLink className={ui.quickLink} href="/pases?nuevo=1">
             <Icon name="person" />
             Invitar
-          </Link>
-          <Link className={ui.quickLink} href="/reservas?nuevo=1">
+          </PendingLink>
+          <PendingLink className={ui.quickLink} href="/reservas?nuevo=1">
             <Icon name="calendar" />
             Evento
-          </Link>
+          </PendingLink>
         </nav>
 
         <section>
