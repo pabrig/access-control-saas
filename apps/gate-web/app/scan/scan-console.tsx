@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PRODUCT_EVENTS } from "@repo/observability/events";
 import { Icon } from "@/components/icons";
 import { accessActionShort, isExitAction } from "@/lib/access-labels";
 import { formatDayHeading, formatTime } from "@/lib/format";
 import { gateErrorLabel, gateRequest } from "@/lib/gate-api";
+import { trackProduct } from "@/lib/product-analytics";
 import { createClient } from "@/lib/supabase/client";
 import { QrCamera } from "./qr-camera";
 import styles from "./scan.module.css";
@@ -122,6 +124,18 @@ type Movement = {
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function trackScan(
+  event: typeof PRODUCT_EVENTS.scanPreview | typeof PRODUCT_EVENTS.scanCommit,
+  payload: { ok: boolean; code?: string; ms: number; kind?: string },
+) {
+  trackProduct(event, {
+    ok: payload.ok,
+    code: payload.code,
+    ms: payload.ms,
+    kind: payload.kind,
+  });
+}
 
 function extractQrToken(raw: string) {
   const trimmed = raw.trim();
@@ -303,6 +317,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
       setFlash(null);
       setMatches([]);
 
+      const started = performance.now();
       const token = await sessionToken();
       if (!token) {
         setFlash({
@@ -361,6 +376,21 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
         setIdentity(null);
         setFlash(payload);
       }
+
+      const ms = Math.round(performance.now() - started);
+      trackScan(PRODUCT_EVENTS.scanPreview, {
+        ok: payload.ok,
+        code: payload.ok
+          ? undefined
+          : "code" in payload
+            ? payload.code
+            : undefined,
+        ms,
+        kind:
+          payload.ok && "kind" in payload && typeof payload.kind === "string"
+            ? payload.kind
+            : undefined,
+      });
 
       setBusy(false);
     },
@@ -422,6 +452,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
     }
 
     setBusy(true);
+    const started = performance.now();
     const token = await sessionToken();
     if (!token) {
       setFlash({
@@ -447,6 +478,22 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
       setMatches([]);
       setMovements(await loadMovements());
     }
+
+    const ms = Math.round(performance.now() - started);
+    trackScan(PRODUCT_EVENTS.scanCommit, {
+      ok: payload.ok,
+      code: payload.ok
+        ? undefined
+        : "code" in payload
+          ? payload.code
+          : undefined,
+      ms,
+      kind:
+        payload.ok && "kind" in payload && typeof payload.kind === "string"
+          ? payload.kind
+          : undefined,
+    });
+
     setBusy(false);
   }
 

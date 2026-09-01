@@ -25,6 +25,7 @@ A SaaS platform for managing entries and exits in gated communities and real est
 │   └── docs/         # Starter docs app (unused by the product)
 ├── packages/
 │   ├── db/           # Database TypeScript types
+│   ├── observability/ # Product events + structured logging helpers
 │   └── ui/           # Shared UI leftovers from the starter
 ├── supabase/
 │   ├── migrations/   # Schema + RLS
@@ -51,3 +52,7 @@ Seed logins (password `password123`):
 - `complex.admin@example.com` — both lots in Los Robles
 - `superadmin@example.com` — everything
 - `security@example.com` — active shift on the main gate
+
+## Observability
+
+See [OBSERVABILITY.md](./OBSERVABILITY.md) for the free-tier stack (Sentry, Vercel Analytics, Supabase logs, uptime).

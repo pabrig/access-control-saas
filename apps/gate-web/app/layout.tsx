@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Observability } from "@/components/observability";
 import "./globals.css";
 
 const sans = Plus_Jakarta_Sans({
@@ -51,6 +52,7 @@ export default function RootLayout({
           {THEME_BOOT}
         </Script>
         {children}
+        <Observability />
       </body>
     </html>
   );
