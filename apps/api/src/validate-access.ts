@@ -267,6 +267,7 @@ export async function validateAccess(
       .from("access_logs")
       .insert({
         invitation_id: invitation.id,
+        property_id: invitation.property_id,
         gate_id: gateId,
         security_user_id: userId,
         action_type: actionType,
