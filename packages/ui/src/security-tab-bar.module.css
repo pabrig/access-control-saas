@@ -8,7 +8,8 @@
   grid-template-columns: repeat(3, 1fr);
   align-items: end;
   gap: 4px;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  padding: 8px var(--shell-pad-x, 16px)
+    calc(8px + env(safe-area-inset-bottom));
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
