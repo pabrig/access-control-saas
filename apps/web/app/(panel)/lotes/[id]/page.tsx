@@ -28,7 +28,7 @@ export default async function LoteFichaPage({
     supabase
       .from("properties")
       .select(
-        "id, lot_number, street_name, neighborhood_id, block_name, phone, notes, neighborhoods(name)",
+        "id, lot_number, street_name, neighborhood_id, block_name, phone, notes, surface_m2, neighborhoods(name)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -73,10 +73,22 @@ export default async function LoteFichaPage({
 
       <section className={ui.card}>
         <dl className={ui.form}>
+          {property.street_name ? (
+            <div>
+              <p className={ui.kicker}>Calle</p>
+              <p>{property.street_name}</p>
+            </div>
+          ) : null}
           {property.block_name ? (
             <div>
               <p className={ui.kicker}>Manzana</p>
               <p>{property.block_name}</p>
+            </div>
+          ) : null}
+          {property.surface_m2 ? (
+            <div>
+              <p className={ui.kicker}>Superficie</p>
+              <p>{property.surface_m2} m²</p>
             </div>
           ) : null}
           {property.phone ? (

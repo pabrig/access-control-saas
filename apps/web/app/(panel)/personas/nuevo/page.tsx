@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Banner, Empty, PageHeader } from "@/components/ui";
+import { FormSection } from "@/components/form-section";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import {
@@ -75,42 +76,54 @@ export default async function NuevaPersonaPage({
         title="Nueva persona"
         description={
           barrio
-            ? "Residente del lote o guardia de seguridad. Entra a Nexo con esa cuenta."
-            : "Nombre, email, contraseña y el rol en tu alcance."
+            ? "Datos básicos, acceso y rol. El residente entra a Nexo con esa cuenta."
+            : "Completá nombre, DNI, email y el rol en tu alcance."
         }
       />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
       <section className={ui.card}>
         <form action={createPerson} className={ui.form}>
-          <PersonFields />
-          <label>
-            Email
-            <input
-              type="email"
-              name="email"
-              required
-              autoComplete="off"
-              inputMode="email"
+          <PersonFields requireDni />
+          <FormSection
+            title="Acceso a Nexo"
+            description="Email y contraseña inicial para ingresar al panel o la app."
+          >
+            <label>
+              Email
+              <input
+                type="email"
+                name="email"
+                required
+                autoComplete="off"
+                inputMode="email"
+                placeholder="nombre@ejemplo.com"
+              />
+            </label>
+            <label>
+              Contraseña inicial
+              <input
+                type="password"
+                name="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Mínimo 8 caracteres"
+              />
+            </label>
+          </FormSection>
+          <FormSection
+            title="Rol en la comunidad"
+            description="Qué puede hacer esta persona y sobre qué lote o barrio."
+          >
+            <PersonRoleFields
+              roles={roles}
+              complexes={complexes ?? []}
+              neighborhoods={neighborhoods ?? []}
+              properties={lots}
+              defaultRole="OWNER"
             />
-          </label>
-          <label>
-            Contraseña inicial
-            <input
-              type="password"
-              name="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </label>
-          <PersonRoleFields
-            roles={roles}
-            complexes={complexes ?? []}
-            neighborhoods={neighborhoods ?? []}
-            properties={lots}
-            defaultRole="OWNER"
-          />
+          </FormSection>
           <button className={ui.button} type="submit">
             Guardar persona
           </button>

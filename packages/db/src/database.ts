@@ -102,16 +102,19 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          location: string | null;
           name: string;
         };
         Insert: {
           created_at?: string;
           id?: string;
+          location?: string | null;
           name: string;
         };
         Update: {
           created_at?: string;
           id?: string;
+          location?: string | null;
           name?: string;
         };
         Relationships: [];
@@ -316,6 +319,7 @@ export type Database = {
           complex_id: string | null;
           created_at: string;
           id: string;
+          location: string | null;
           name: string;
           timezone: string;
         };
@@ -323,6 +327,7 @@ export type Database = {
           complex_id?: string | null;
           created_at?: string;
           id?: string;
+          location?: string | null;
           name: string;
           timezone?: string;
         };
@@ -330,6 +335,7 @@ export type Database = {
           complex_id?: string | null;
           created_at?: string;
           id?: string;
+          location?: string | null;
           name?: string;
           timezone?: string;
         };
@@ -383,6 +389,7 @@ export type Database = {
           notes: string | null;
           phone: string | null;
           street_name: string | null;
+          surface_m2: number | null;
         };
         Insert: {
           block_name?: string | null;
@@ -393,6 +400,7 @@ export type Database = {
           notes?: string | null;
           phone?: string | null;
           street_name?: string | null;
+          surface_m2?: number | null;
         };
         Update: {
           block_name?: string | null;
@@ -403,6 +411,7 @@ export type Database = {
           notes?: string | null;
           phone?: string | null;
           street_name?: string | null;
+          surface_m2?: number | null;
         };
         Relationships: [
           {
@@ -659,6 +668,7 @@ export type Database = {
       admin_create_person: {
         Args: {
           p_complex_id?: string | null;
+          p_dni: string;
           p_email: string;
           p_first_name: string;
           p_last_name: string;

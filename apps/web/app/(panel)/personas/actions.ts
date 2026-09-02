@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { requireDni } from "@/lib/admin-form";
 import {
   assignableRoles,
   canRemoveAssignedRole,
@@ -53,6 +54,7 @@ export async function createPerson(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
+  const dni = requireDni(formData.get("dni"));
   const role = String(formData.get("role") ?? "") as Role;
   const scope = scopeForRole(role, formData);
 
@@ -67,6 +69,9 @@ export async function createPerson(formData: FormData) {
   }
   if (!firstName || !lastName) {
     fail("/personas/nuevo", "Nombre y apellido son obligatorios.");
+  }
+  if (!dni) {
+    fail("/personas/nuevo", "El DNI es obligatorio (7 a 12 dígitos).");
   }
   if (!role || !allowed.includes(role)) {
     fail("/personas/nuevo", "Elegí un rol que puedas asignar.");
@@ -87,6 +92,7 @@ export async function createPerson(formData: FormData) {
     p_password: password,
     p_first_name: firstName,
     p_last_name: lastName,
+    p_dni: dni,
     p_role: role,
     p_complex_id: scope.complexId,
     p_neighborhood_id: scope.neighborhoodId,
@@ -105,6 +111,7 @@ export async function updatePerson(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim();
+  const dni = requireDni(formData.get("dni"));
   const isActive = formData.get("is_active") === "on";
 
   if (!id) {
@@ -112,6 +119,9 @@ export async function updatePerson(formData: FormData) {
   }
   if (!firstName || !lastName) {
     fail(`/personas/${id}/editar`, "Nombre y apellido son obligatorios.");
+  }
+  if (!dni) {
+    fail(`/personas/${id}/editar`, "El DNI es obligatorio (7 a 12 dígitos).");
   }
   if (id === session.userId && !isActive) {
     fail(`/personas/${id}/editar`, "No podés desactivar tu propia cuenta.");
@@ -123,6 +133,7 @@ export async function updatePerson(formData: FormData) {
     .update({
       first_name: firstName,
       last_name: lastName,
+      dni,
       is_active: isActive,
     })
     .eq("id", id);

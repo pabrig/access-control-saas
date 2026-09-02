@@ -164,6 +164,37 @@ a.card:hover {
   gap: 12px;
 }
 
+.formSection {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.formSectionTitle {
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.formSectionHint {
+  margin: -4px 0 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.formSectionBody {
+  display: grid;
+  gap: 12px;
+}
+
 .formRow {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

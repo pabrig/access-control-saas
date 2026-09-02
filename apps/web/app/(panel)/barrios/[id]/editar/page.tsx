@@ -23,7 +23,7 @@ export default async function EditarBarrioPage({
   const [{ data: neighborhood }, { data: complexes }] = await Promise.all([
     supabase
       .from("neighborhoods")
-      .select("id, name, complex_id")
+      .select("id, name, complex_id, location")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("complexes").select("id, name").order("name"),
@@ -49,7 +49,7 @@ export default async function EditarBarrioPage({
       <PageHeader
         kicker="Barrio"
         title="Editar barrio"
-        description="Nombre y, si aplica, el complejo al que pertenece."
+        description="Nombre, ubicación y, si aplica, el complejo al que pertenece."
       />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
@@ -62,6 +62,7 @@ export default async function EditarBarrioPage({
             superadmin={superadmin}
             defaultName={neighborhood.name}
             defaultComplexId={neighborhood.complex_id}
+            defaultLocation={neighborhood.location}
           />
           <button className={ui.button} type="submit">
             Guardar

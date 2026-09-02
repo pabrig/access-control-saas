@@ -22,7 +22,7 @@ export default async function EditarPersonaPage({
   const supabase = await createClient();
   const { data: person } = await supabase
     .from("profiles")
-    .select("id, first_name, last_name, is_active")
+    .select("id, first_name, last_name, dni, is_active")
     .eq("id", id)
     .maybeSingle();
 
@@ -41,14 +41,14 @@ export default async function EditarPersonaPage({
       <PageHeader
         kicker="Persona"
         title="Editar persona"
-        description="Nombre y si la cuenta sigue activa. El email de acceso no se cambia acá."
+        description="Nombre, DNI y si la cuenta sigue activa. El email de acceso no se cambia acá."
       />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
       <section className={ui.card}>
         <form action={updatePerson} className={ui.form}>
           <input type="hidden" name="id" value={person.id} />
-          <PersonFields value={person} />
+          <PersonFields value={person} requireDni />
           {isSelf ? (
             <input type="hidden" name="is_active" value="on" />
           ) : (
