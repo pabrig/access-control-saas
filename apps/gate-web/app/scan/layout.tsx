@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GateSecurityTabBar } from "@/components/gate-security-tab-bar";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ScanLayout({
@@ -15,5 +16,10 @@ export default async function ScanLayout({
     redirect("/login");
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      <GateSecurityTabBar />
+    </>
+  );
 }

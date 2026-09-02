@@ -254,11 +254,13 @@
 }
 
 @media (max-width: 899px) {
-  .resident .main {
+  .resident .main,
+  .security .main {
     padding-bottom: 96px;
   }
 
-  .resident .mobileNav {
+  .resident .mobileNav,
+  .security .mobileNav {
     display: none;
   }
 
