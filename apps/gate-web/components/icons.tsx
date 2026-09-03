@@ -1,6 +1,15 @@
 import type { ReactNode } from "react";
 
-type IconName = "sun" | "moon" | "logout" | "qr" | "enter" | "exit" | "car";
+type IconName =
+  | "sun"
+  | "moon"
+  | "logout"
+  | "qr"
+  | "enter"
+  | "exit"
+  | "car"
+  | "home"
+  | "clock";
 
 export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   return (
@@ -61,6 +70,18 @@ const ICONS: Record<IconName, ReactNode> = {
       <path d="M4 14h16l-1.2-4.2A2 2 0 0 0 16.9 8.5H7.1A2 2 0 0 0 5.2 9.8L4 14z" />
       <path d="M6.5 17.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM17.5 17.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
       <path d="M8 14.5h8" />
+    </>
+  ),
+  home: (
+    <>
+      <path d="M4 10.5 12 4l8 6.5" />
+      <path d="M6 9.5V19a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1V9.5" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 8v4.5l3 2" />
     </>
   ),
 };

@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PRODUCT_EVENTS } from "@repo/observability/events";
 import { Icon } from "@/components/icons";
 import { accessActionShort, isExitAction } from "@/lib/access-labels";
 import { formatDayHeading, formatTime } from "@/lib/format";
 import { gateErrorLabel, gateRequest } from "@/lib/gate-api";
+import { trackProduct } from "@/lib/product-analytics";
 import { createClient } from "@/lib/supabase/client";
 import { QrCamera } from "./qr-camera";
 import styles from "./scan.module.css";
@@ -118,10 +120,34 @@ type Movement = {
   timestamp: string;
   gateName: string | null;
   guestName: string | null;
+  lotLabel: string | null;
 };
+
+function inviteLotLabel(value: unknown) {
+  const row = Array.isArray(value) ? value[0] : value;
+  if (!row || typeof row !== "object" || !("lot_number" in row)) {
+    return null;
+  }
+
+  const lot = row as { lot_number: string; street_name: string | null };
+  const label = lot.lot_number ? `Lote ${lot.lot_number}` : "Lote";
+  return lot.street_name ? `${lot.street_name} · ${label}` : label;
+}
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function trackScan(
+  event: typeof PRODUCT_EVENTS.scanPreview | typeof PRODUCT_EVENTS.scanCommit,
+  payload: { ok: boolean; code?: string; ms: number; kind?: string },
+) {
+  trackProduct(event, {
+    ok: payload.ok,
+    code: payload.code,
+    ms: payload.ms,
+    kind: payload.kind,
+  });
+}
 
 function extractQrToken(raw: string) {
   const trimmed = raw.trim();
@@ -175,7 +201,7 @@ async function loadMovements() {
   const { data } = await supabase
     .from("access_logs")
     .select(
-      "id, action_type, timestamp, gates(name), invitations(guest_name), profiles!access_logs_profile_id_fkey(first_name, last_name)",
+      "id, action_type, timestamp, gates(name), invitations(guest_name, properties(lot_number, street_name)), profiles!access_logs_profile_id_fkey(first_name, last_name)",
     )
     .order("timestamp", { ascending: false })
     .limit(20);
@@ -190,12 +216,18 @@ async function loadMovements() {
         ? personName(resident.first_name, resident.last_name)
         : null;
 
+    const invitation = asNamed(row.invitations) as {
+      guest_name?: string;
+      properties?: unknown;
+    } | null;
+
     return {
       id: row.id,
       actionType: row.action_type,
       timestamp: row.timestamp,
       gateName: asNamed(row.gates)?.name ?? null,
-      guestName: asNamed(row.invitations)?.guest_name ?? residentName,
+      guestName: invitation?.guest_name ?? residentName,
+      lotLabel: inviteLotLabel(invitation?.properties),
     };
   }) satisfies Movement[];
 }
@@ -303,6 +335,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
       setFlash(null);
       setMatches([]);
 
+      const started = performance.now();
       const token = await sessionToken();
       if (!token) {
         setFlash({
@@ -361,6 +394,21 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
         setIdentity(null);
         setFlash(payload);
       }
+
+      const ms = Math.round(performance.now() - started);
+      trackScan(PRODUCT_EVENTS.scanPreview, {
+        ok: payload.ok,
+        code: payload.ok
+          ? undefined
+          : "code" in payload
+            ? payload.code
+            : undefined,
+        ms,
+        kind:
+          payload.ok && "kind" in payload && typeof payload.kind === "string"
+            ? payload.kind
+            : undefined,
+      });
 
       setBusy(false);
     },
@@ -422,6 +470,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
     }
 
     setBusy(true);
+    const started = performance.now();
     const token = await sessionToken();
     if (!token) {
       setFlash({
@@ -447,6 +496,22 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
       setMatches([]);
       setMovements(await loadMovements());
     }
+
+    const ms = Math.round(performance.now() - started);
+    trackScan(PRODUCT_EVENTS.scanCommit, {
+      ok: payload.ok,
+      code: payload.ok
+        ? undefined
+        : "code" in payload
+          ? payload.code
+          : undefined,
+      ms,
+      kind:
+        payload.ok && "kind" in payload && typeof payload.kind === "string"
+          ? payload.kind
+          : undefined,
+    });
+
     setBusy(false);
   }
 
@@ -654,6 +719,7 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
                         <strong>{movement.guestName ?? "Invitado"}</strong>
                         <span className={styles.feedMeta}>
                           {accessActionShort(movement.actionType)}
+                          {movement.lotLabel ? ` · Origen: ${movement.lotLabel}` : ""}
                         </span>
                       </span>
                       <span className={styles.feedTime}>

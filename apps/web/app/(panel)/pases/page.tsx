@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Banner, Empty, PageHeader } from "@/components/ui";
+import { PassCreatedBeacon } from "@/components/pass-created-beacon";
 import { Icon } from "@/components/icons";
 import { PendingLink } from "@/components/pending-link";
 import ui from "@/components/ui.module.css";
@@ -86,20 +87,24 @@ export default async function PasesPage({
 
   if (admin) {
     return (
-      <AdminPasses
-        error={flash.error}
-        created={flash.created}
-        updated={flash.updated}
-        queryError={error?.message}
-        grupo={flash.grupo}
-        people={people}
-        showBarrio={!isNeighborhoodAdmin(session)}
-      />
+      <>
+        <PassCreatedBeacon created={flash.created} />
+        <AdminPasses
+          error={flash.error}
+          created={flash.created}
+          updated={flash.updated}
+          queryError={error?.message}
+          grupo={flash.grupo}
+          people={people}
+          showBarrio={!isNeighborhoodAdmin(session)}
+        />
+      </>
     );
   }
 
   return (
     <>
+      <PassCreatedBeacon created={flash.created} />
       <PageHeader
         title="Invitados"
         actions={

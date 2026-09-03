@@ -1,7 +1,9 @@
 import cors from "cors";
 import express from "express";
+import { logStructured } from "@repo/observability/logger";
 import { corsOrigins, env } from "./env.js";
 import { lookupAccess } from "./lookup-access.js";
+import { captureApiError } from "./sentry.js";
 import { createUserClient } from "./supabase.js";
 import { validateAccess } from "./validate-access.js";
 import {
@@ -13,6 +15,26 @@ const app = express();
 
 app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
+
+app.use((req, res, next) => {
+  const started = Date.now();
+
+  res.on("finish", () => {
+    if (!req.path.startsWith("/access") && req.path !== "/health") {
+      return;
+    }
+
+    logStructured("info", {
+      event: "http_request",
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      ms: Date.now() - started,
+    });
+  });
+
+  next();
+});
 
 app.get("/", (_req, res) => {
   res.json({
@@ -78,7 +100,7 @@ app.post("/access/lookup", async (req, res) => {
 
     res.json(result);
   } catch (cause) {
-    console.error(cause);
+    captureApiError(cause);
     res
       .status(500)
       .json({ ok: false, code: "INTERNAL", message: "Lookup failed" });
@@ -150,7 +172,7 @@ app.post("/access/validate", async (req, res) => {
       message: "Provide qrToken or profileId and propertyId",
     });
   } catch (cause) {
-    console.error(cause);
+    captureApiError(cause);
     res
       .status(500)
       .json({ ok: false, code: "INTERNAL", message: "Validation failed" });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Badge, Banner, PageHeader } from "@/components/ui";
+import { Badge, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import { PendingLink } from "@/components/pending-link";
 import ui from "@/components/ui.module.css";
@@ -8,6 +8,7 @@ import { formatRange, formatTime, initials, personName } from "@/lib/format";
 import { accessActionShort, isExitAction, passStatus } from "@/lib/labels";
 import { asOne } from "@/lib/relations";
 import { CommunityHome } from "./community-home";
+import { gateScanUrl } from "@/lib/gate-url";
 import { isAdmin, isOwner, isSecurity, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,6 +17,8 @@ export default async function DashboardPage() {
   const owner = isOwner(session);
   const admin = isAdmin(session);
   const resident = owner && !admin;
+  const security = isSecurity(session) && !admin;
+  const scanUrl = gateScanUrl();
 
   if (admin) {
     return <CommunityHome session={session} />;
@@ -166,20 +169,28 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={`Hola, ${session.firstName}`}
-        description="Consulta. El escaneo se hace en la app de barrera."
+        description="Consultá movimientos o abrí el escáner en la puerta."
       />
-      {isSecurity(session) ? (
-        <Banner tone="warn">
-          Para escanear QRs abrí la app de barrera (puerto 3002) con la misma
-          cuenta de seguridad.
-        </Banner>
+      {security ? (
+        <div className={ui.stack}>
+          <a className={ui.button} href={scanUrl}>
+            <Icon name="qr" size={18} />
+            Escanear QR en la puerta
+          </a>
+          <PendingLink className={ui.buttonSecondary} href="/movimientos">
+            <Icon name="clock" size={18} />
+            Ver movimientos
+          </PendingLink>
+        </div>
       ) : null}
-      <Link className={ui.card} href="/movimientos">
-        <h2>Movimientos</h2>
-        <p className={ui.muted}>
-          Entradas y salidas. El detalle está en el historial.
-        </p>
-      </Link>
+      {!security ? (
+        <Link className={ui.card} href="/movimientos">
+          <h2>Movimientos</h2>
+          <p className={ui.muted}>
+            Entradas y salidas. El detalle está en el historial.
+          </p>
+        </Link>
+      ) : null}
     </>
   );
 }

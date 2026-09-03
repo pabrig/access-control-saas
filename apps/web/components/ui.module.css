@@ -7,6 +7,30 @@
   margin-bottom: 24px;
 }
 
+@media (max-width: 899px) {
+  .header {
+    margin-bottom: var(--shell-section-gap, 16px);
+    gap: 12px;
+  }
+
+  .stats {
+    margin-bottom: var(--shell-section-gap, 16px);
+    gap: 10px;
+  }
+
+  .banner {
+    margin-bottom: var(--shell-section-gap, 16px);
+  }
+
+  .sectionHead {
+    margin-bottom: 10px;
+  }
+
+  .quick {
+    margin-bottom: var(--shell-section-gap, 16px);
+  }
+}
+
 .kicker {
   font-size: 12px;
   font-weight: 600;
@@ -414,7 +438,7 @@ a.card:hover {
 
 .stack {
   display: grid;
-  gap: 16px;
+  gap: var(--shell-section-gap, 16px);
 }
 
 .deskSplit {

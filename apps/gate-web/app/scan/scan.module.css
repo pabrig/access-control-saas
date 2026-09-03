@@ -1,15 +1,17 @@
 .shell {
   min-height: 100dvh;
-  padding: 12px 16px 40px;
+  padding: var(--shell-pad-y) var(--shell-pad-x)
+    calc(var(--shell-tab-inset) + env(safe-area-inset-bottom));
 }
 
 .top {
-  width: min(100%, 440px);
-  margin: 0 auto 8px;
+  width: 100%;
+  max-width: var(--shell-content-max);
+  margin: 0 auto var(--shell-section-gap);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--shell-header-h);
 }
 
 .brand {
@@ -40,10 +42,11 @@
 }
 
 .console {
-  width: min(100%, 440px);
+  width: 100%;
+  max-width: var(--shell-content-max);
   margin: 0 auto;
   display: grid;
-  gap: 16px;
+  gap: var(--shell-section-gap);
 }
 
 .kicker {

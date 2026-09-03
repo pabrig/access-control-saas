@@ -1,8 +1,10 @@
 import { AppShell } from "@/components/shell";
+import { gateScanUrl } from "@/lib/gate-url";
 import {
   isAdmin,
   isNeighborhoodAdmin,
   isOwner,
+  isSecurity,
   primaryRole,
   requireSession,
 } from "@/lib/session";
@@ -16,17 +18,16 @@ export default async function PanelLayout({
   const admin = isAdmin(session);
   const resident = isOwner(session) && !admin;
   const barrio = isNeighborhoodAdmin(session);
+  const security = isSecurity(session) && !admin && !barrio;
+  const scanUrl = gateScanUrl();
 
-  const nav = resident
+  const nav = security
     ? [
         { href: "/", label: "Inicio" },
-        { href: "/credencial", label: "Credencial" },
-        { href: "/pases", label: "Invitados" },
-        { href: "/reservas", label: "Eventos" },
+        { href: scanUrl, label: "Escanear", external: true },
         { href: "/movimientos", label: "Movimientos" },
-        { href: "/lotes", label: "Mi lote" },
       ]
-    : barrio
+    : resident
       ? [
           { href: "/", label: "Inicio" },
           { href: "/pases", label: "Pases" },
@@ -65,7 +66,7 @@ export default async function PanelLayout({
       firstName={session.firstName}
       nav={nav}
       role={primaryRole(session)}
-      variant={resident ? "resident" : "ops"}
+      variant={security ? "security" : resident ? "resident" : "ops"}
     >
       {children}
     </AppShell>
