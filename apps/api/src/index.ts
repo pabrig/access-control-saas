@@ -66,7 +66,7 @@ async function requireApiUser(req: express.Request, res: express.Response) {
   const {
     data: { user },
     error,
-  } = await userClient.auth.getUser();
+  } = await userClient.auth.getUser(token);
 
   if (error || !user) {
     res
