@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { parseSurfaceM2, requireLocation } from "@/lib/admin-form";
 import {
   assignedNeighborhoodId,
   canAssignResidents,
@@ -31,11 +32,30 @@ function nextPath(formData: FormData) {
 function lotFields(formData: FormData) {
   return {
     lot_number: String(formData.get("lot_number") ?? "").trim(),
-    street_name: emptyToNull(formData.get("street_name")),
-    block_name: emptyToNull(formData.get("block_name")),
+    street_name: String(formData.get("street_name") ?? "").trim(),
+    block_name: String(formData.get("block_name") ?? "").trim(),
     phone: emptyToNull(formData.get("phone")),
     notes: emptyToNull(formData.get("notes")),
+    surface_m2: parseSurfaceM2(formData.get("surface_m2")),
   };
+}
+
+function validateLotFields(
+  fields: ReturnType<typeof lotFields>,
+  path: string,
+) {
+  if (!fields.lot_number) {
+    fail(path, "El lote necesita un número.");
+  }
+  if (!fields.block_name) {
+    fail(path, "La manzana es obligatoria.");
+  }
+  if (!fields.street_name) {
+    fail(path, "La calle es obligatoria.");
+  }
+  if (fields.surface_m2 === null) {
+    fail(path, "La superficie en m² es obligatoria.");
+  }
 }
 
 export async function createProperty(formData: FormData) {
@@ -47,21 +67,28 @@ export async function createProperty(formData: FormData) {
     neighborhoodId = assignedNeighborhoodId(session) ?? "";
   }
 
-  if (!neighborhoodId || !fields.lot_number) {
+  if (!neighborhoodId) {
     fail(
       "/lotes/nuevo",
       isNeighborhoodAdmin(session)
-        ? "El lote necesita un número."
-        : "Elegí el barrio y el número de lote.",
+        ? "No hay un barrio asignado a tu rol."
+        : "Elegí el barrio del lote.",
     );
   }
+
+  validateLotFields(fields, "/lotes/nuevo");
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("properties")
     .insert({
       neighborhood_id: neighborhoodId,
-      ...fields,
+      lot_number: fields.lot_number,
+      street_name: fields.street_name,
+      block_name: fields.block_name,
+      phone: fields.phone,
+      notes: fields.notes,
+      surface_m2: fields.surface_m2,
     })
     .select("id")
     .single();
@@ -78,14 +105,30 @@ export async function updateProperty(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const fields = lotFields(formData);
   const neighborhoodId = String(formData.get("neighborhood_id") ?? "");
+  const path = id ? `/lotes/${id}/editar` : "/lotes";
 
-  if (!id || !fields.lot_number) {
-    fail(id ? `/lotes/${id}/editar` : "/lotes", "El lote necesita un número.");
+  if (!id) {
+    fail("/lotes", "Lote inválido.");
   }
 
+  validateLotFields(fields, path);
+
   const supabase = await createClient();
-  const patch: ReturnType<typeof lotFields> & { neighborhood_id?: string } = {
-    ...fields,
+  const patch: {
+    lot_number: string;
+    street_name: string;
+    block_name: string;
+    phone: string | null;
+    notes: string | null;
+    surface_m2: number;
+    neighborhood_id?: string;
+  } = {
+    lot_number: fields.lot_number,
+    street_name: fields.street_name,
+    block_name: fields.block_name,
+    phone: fields.phone,
+    notes: fields.notes,
+    surface_m2: fields.surface_m2 as number,
   };
 
   if (neighborhoodId && !isNeighborhoodAdmin(session)) {
@@ -98,7 +141,7 @@ export async function updateProperty(formData: FormData) {
     .eq("id", id);
 
   if (error) {
-    fail(`/lotes/${id}/editar`, error.message);
+    fail(path, error.message);
   }
 
   redirect(`/lotes/${id}`);
@@ -112,10 +155,17 @@ export async function createNeighborhood(formData: FormData) {
   }
 
   const name = String(formData.get("name") ?? "").trim();
+  const location = requireLocation(formData.get("location"));
   let complexId = String(formData.get("complex_id") ?? "") || null;
 
   if (!name) {
     fail("/barrios/nuevo", "El barrio necesita un nombre.");
+  }
+  if (!location) {
+    fail(
+      "/barrios/nuevo",
+      "La ubicación es obligatoria (mínimo 3 caracteres).",
+    );
   }
 
   if (!isSuperadmin(session)) {
@@ -140,6 +190,7 @@ export async function createNeighborhood(formData: FormData) {
     .from("neighborhoods")
     .insert({
       name,
+      location,
       complex_id: complexId,
     })
     .select("id")
@@ -156,16 +207,22 @@ export async function updateNeighborhood(formData: FormData) {
   const session = await requireSession();
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
+  const location = requireLocation(formData.get("location"));
   let complexId = String(formData.get("complex_id") ?? "") || null;
+  const path = id ? `/barrios/${id}/editar` : "/lotes";
 
   if (!id || !name) {
-    fail(
-      id ? `/barrios/${id}/editar` : "/lotes",
-      "El barrio necesita un nombre.",
-    );
+    fail(path, "El barrio necesita un nombre.");
+  }
+  if (!location) {
+    fail(path, "La ubicación es obligatoria (mínimo 3 caracteres).");
   }
 
-  const patch: { name: string; complex_id?: string | null } = { name };
+  const patch: {
+    name: string;
+    location: string;
+    complex_id?: string | null;
+  } = { name, location };
 
   if (isSuperadmin(session)) {
     patch.complex_id = complexId;
@@ -193,7 +250,7 @@ export async function updateNeighborhood(formData: FormData) {
     .eq("id", id);
 
   if (error) {
-    fail(`/barrios/${id}/editar`, error.message);
+    fail(path, error.message);
   }
 
   redirect(`/barrios/${id}`);

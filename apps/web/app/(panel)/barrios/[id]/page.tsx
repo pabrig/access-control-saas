@@ -32,7 +32,7 @@ export default async function BarrioPage({
     await Promise.all([
       supabase
         .from("neighborhoods")
-        .select("id, name, complexes(name)")
+        .select("id, name, location, complexes(name)")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -62,7 +62,11 @@ export default async function BarrioPage({
       <PageHeader
         kicker={complex?.name ?? "Comunidad"}
         title={neighborhood.name}
-        description="Lotes de este barrio. Tocá uno para ver la ficha."
+        description={
+          neighborhood.location
+            ? `${neighborhood.location}. Lotes de este barrio. Tocá uno para ver la ficha.`
+            : "Lotes de este barrio. Tocá uno para ver la ficha."
+        }
         actions={
           <>
             <Link

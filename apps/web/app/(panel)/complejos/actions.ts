@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { requireLocation } from "@/lib/admin-form";
 import { canManageComplex, isSuperadmin, requireSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,14 +17,21 @@ export async function createComplex(formData: FormData) {
   }
 
   const name = String(formData.get("name") ?? "").trim();
+  const location = requireLocation(formData.get("location"));
   if (!name) {
     fail("/complejos/nuevo", "El complejo necesita un nombre.");
+  }
+  if (!location) {
+    fail(
+      "/complejos/nuevo",
+      "La ubicación es obligatoria (mínimo 3 caracteres).",
+    );
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("complexes")
-    .insert({ name })
+    .insert({ name, location })
     .select("id")
     .single();
 
@@ -38,11 +46,18 @@ export async function updateComplex(formData: FormData) {
   const session = await requireSession();
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
+  const location = requireLocation(formData.get("location"));
 
   if (!id || !name) {
     fail(
       id ? `/complejos/${id}/editar` : "/complejos",
       "El complejo necesita un nombre.",
+    );
+  }
+  if (!location) {
+    fail(
+      id ? `/complejos/${id}/editar` : "/complejos",
+      "La ubicación es obligatoria (mínimo 3 caracteres).",
     );
   }
 
@@ -53,7 +68,7 @@ export async function updateComplex(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("complexes")
-    .update({ name })
+    .update({ name, location })
     .eq("id", id);
 
   if (error) {

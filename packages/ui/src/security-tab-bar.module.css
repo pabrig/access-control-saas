@@ -1,0 +1,70 @@
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+  gap: 4px;
+  padding: 8px var(--shell-pad-x, 16px)
+    calc(8px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+}
+
+.tab,
+.tabActive,
+.tabPrimary,
+.tabPrimaryActive {
+  min-height: 56px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.tabActive {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.tabPrimary,
+.tabPrimaryActive {
+  margin-top: -10px;
+  color: var(--muted);
+}
+
+.tabPrimaryActive {
+  color: var(--brand);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+}
+
+.primaryIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-brand);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+}
+
+.tabPrimaryActive .primaryIcon {
+  box-shadow:
+    0 0 0 4px var(--brand-soft),
+    var(--shadow);
+}

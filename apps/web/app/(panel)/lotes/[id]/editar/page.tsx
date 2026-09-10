@@ -25,7 +25,7 @@ export default async function EditarLotePage({
     supabase
       .from("properties")
       .select(
-        "id, lot_number, street_name, block_name, phone, notes, neighborhood_id",
+        "id, lot_number, street_name, block_name, phone, notes, surface_m2, neighborhood_id",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -47,7 +47,7 @@ export default async function EditarLotePage({
       <PageHeader
         kicker="Lote"
         title="Editar lote"
-        description="Cambios de número, calle, contacto o notas."
+        description="Ubicación, superficie, contacto y notas del lote."
       />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 

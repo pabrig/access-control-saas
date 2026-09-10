@@ -42,7 +42,7 @@ export default async function PersonaFichaPage({
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, first_name, last_name, email, is_active")
+      .select("id, first_name, last_name, email, dni, is_active")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -94,6 +94,12 @@ export default async function PersonaFichaPage({
             <div>
               <p className={ui.kicker}>Email</p>
               <p>{person.email}</p>
+            </div>
+          ) : null}
+          {person.dni ? (
+            <div>
+              <p className={ui.kicker}>DNI</p>
+              <p>{person.dni}</p>
             </div>
           ) : null}
           <div>

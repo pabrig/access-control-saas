@@ -48,6 +48,7 @@ type InvitationRel = {
   guest_name: string | null;
   neighborhood_id: string | null;
   neighborhoods: Named | Named[] | null;
+  properties: PropertyRel | PropertyRel[] | null;
 };
 
 type PropertyRel = {
@@ -101,7 +102,8 @@ type Place = {
 function placeOf(log: LogRow): Place {
   const gate = asOne<GateRel>(log.gates);
   const invitation = asOne<InvitationRel>(log.invitations);
-  const property = asOne<PropertyRel>(log.properties);
+  const inviteProperty = asOne<PropertyRel>(invitation?.properties);
+  const property = asOne<PropertyRel>(log.properties) ?? inviteProperty;
   const gateComplex = asOne<Named>(gate?.complexes);
   const gateBarrio = asOne<Named>(gate?.neighborhoods);
   const inviteBarrio = asOne<Named>(invitation?.neighborhoods);
@@ -192,9 +194,18 @@ function guestName(log: LogRow) {
   return "Invitado";
 }
 
+function movementProperty(log: LogRow) {
+  const invitation = asOne<InvitationRel>(log.invitations);
+  return (
+    asOne<PropertyRel>(log.properties) ??
+    asOne<PropertyRel>(invitation?.properties) ??
+    null
+  );
+}
+
 function MovementFeedItem({ log }: { log: LogRow }) {
   const invitation = asOne<InvitationRel>(log.invitations);
-  const property = asOne<PropertyRel>(log.properties);
+  const property = movementProperty(log);
   const place = placeOf(log);
   const exited = isExitAction(log.action_type);
   const kind = subjectKind(log);
@@ -210,7 +221,7 @@ function MovementFeedItem({ log }: { log: LogRow }) {
         </strong>
         <span className={ui.feedMeta}>
           {placeLine(place, accessActionShort(log.action_type))}
-          {place.lotLabel ? ` · ${place.lotLabel}` : ""}
+          {place.lotLabel ? ` · Origen: ${place.lotLabel}` : ""}
         </span>
       </span>
       <span className={ui.feedTime}>{formatTime(log.timestamp)}</span>
@@ -282,7 +293,7 @@ export default async function MovimientosPage({
   const { data: logs, error: logsError } = await supabase
     .from("access_logs")
     .select(
-      "id, action_type, timestamp, invitation_id, profile_id, property_id, gates(id, name, type, complex_id, neighborhood_id, complexes(id, name), neighborhoods(id, name)), invitations(id, guest_name, neighborhood_id, neighborhoods(id, name)), profiles!access_logs_security_user_id_fkey(first_name, last_name), resident:profiles!access_logs_profile_id_fkey(first_name, last_name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name, complex_id, complexes(id, name)))",
+      "id, action_type, timestamp, invitation_id, profile_id, property_id, gates(id, name, type, complex_id, neighborhood_id, complexes(id, name), neighborhoods(id, name)), invitations(id, guest_name, neighborhood_id, neighborhoods(id, name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name, complex_id, complexes(id, name)))), profiles!access_logs_security_user_id_fkey(first_name, last_name), resident:profiles!access_logs_profile_id_fkey(first_name, last_name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name, complex_id, complexes(id, name)))",
     )
     .order("timestamp", { ascending: false })
     .limit(200);
@@ -372,7 +383,7 @@ function OwnerMovimientos({
             { key: "gate", header: "Barrera" },
             { key: "barrio", header: "Barrio" },
             { key: "complex", header: "Complejo" },
-            { key: "lot", header: "Lote" },
+            { key: "lot", header: "Lote origen" },
           ]}
         />
       )}
@@ -619,7 +630,7 @@ function GuardBook({
             { key: "gate", header: "Barrera" },
             { key: "barrio", header: "Barrio" },
             { key: "complex", header: "Complejo" },
-            { key: "lot", header: "Lote" },
+            { key: "lot", header: "Lote origen" },
             { key: "guard", header: "Guardia" },
           ]}
         />

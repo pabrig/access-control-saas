@@ -6,13 +6,14 @@ import { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/login/actions";
 import { NexoLogo } from "@/components/brand/nexo-logo";
+import { WebSecurityTabBar } from "@/components/security-tab-bar";
 import { Icon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { roleLabel } from "@/lib/labels";
 import type { Role } from "@/lib/session";
 import styles from "./shell.module.css";
 
-type NavItem = { href: string; label: string };
+type NavItem = { href: string; label: string; external?: boolean };
 
 const NAV_ICON = {
   "/": "home",
@@ -25,6 +26,7 @@ const NAV_ICON = {
   "/barreras": "car",
   "/turnos": "clock",
   "/credencial": "users",
+  scan: "qr",
 } as const;
 
 function ShellLink({
@@ -53,6 +55,35 @@ function LinkPending() {
   return <span className={styles.linkPendingMark} data-pending="true" />;
 }
 
+function NavTab({
+  item,
+  active,
+}: {
+  item: NavItem;
+  active: boolean;
+}) {
+  const className = active ? styles.tabActive : styles.tab;
+  const icon =
+    NAV_ICON[item.href as keyof typeof NAV_ICON] ??
+    (item.label === "Escanear" ? NAV_ICON.scan : "home");
+
+  if (item.external || item.href.startsWith("http")) {
+    return (
+      <a className={className} href={item.href} rel="noopener noreferrer">
+        <Icon name={icon} />
+        {item.label}
+      </a>
+    );
+  }
+
+  return (
+    <ShellLink className={className} href={item.href}>
+      <Icon name={icon} />
+      {item.label}
+    </ShellLink>
+  );
+}
+
 export function AppShell({
   firstName,
   email,
@@ -65,7 +96,7 @@ export function AppShell({
   email: string;
   role: Role | null;
   nav: NavItem[];
-  variant?: "resident" | "ops";
+  variant?: "resident" | "ops" | "security";
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -77,6 +108,10 @@ export function AppShell({
       : nav;
 
   function isActive(href: string) {
+    if (href.startsWith("http")) {
+      return false;
+    }
+
     if (href === "/") {
       return pathname === "/" || pathname.startsWith("/complejos");
     }
@@ -96,7 +131,9 @@ export function AppShell({
       className={
         variant === "resident"
           ? `${styles.frame} ${styles.resident}`
-          : styles.frame
+          : variant === "security"
+            ? `${styles.frame} ${styles.security}`
+            : styles.frame
       }
     >
       <aside className={styles.sidebar}>
@@ -104,21 +141,41 @@ export function AppShell({
           <NexoLogo />
         </ShellLink>
         <nav className={styles.nav} aria-label="Principal">
-          {nav.map((item) => (
-            <ShellLink
-              key={item.href}
-              className={
-                isActive(item.href) ? styles.navActive : styles.navLink
-              }
-              href={item.href}
-            >
-              <Icon
-                name={NAV_ICON[item.href as keyof typeof NAV_ICON] ?? "home"}
-                size={18}
-              />
-              {item.label}
-            </ShellLink>
-          ))}
+          {nav.map((item) =>
+            item.external || item.href.startsWith("http") ? (
+              <a
+                key={item.href}
+                className={styles.navLink}
+                href={item.href}
+                rel="noopener noreferrer"
+              >
+                <Icon
+                  name={
+                    item.label === "Escanear"
+                      ? "qr"
+                      : (NAV_ICON[item.href as keyof typeof NAV_ICON] ??
+                        "home")
+                  }
+                  size={18}
+                />
+                {item.label}
+              </a>
+            ) : (
+              <ShellLink
+                key={item.href}
+                className={
+                  isActive(item.href) ? styles.navActive : styles.navLink
+                }
+                href={item.href}
+              >
+                <Icon
+                  name={NAV_ICON[item.href as keyof typeof NAV_ICON] ?? "home"}
+                  size={18}
+                />
+                {item.label}
+              </ShellLink>
+            ),
+          )}
         </nav>
         <div className={styles.user}>
           <p>
@@ -173,19 +230,15 @@ export function AppShell({
         {variant === "resident" ? (
           <nav className={styles.tabBar} aria-label="Acciones frecuentes">
             {tabs.map((item) => (
-              <ShellLink
+              <NavTab
                 key={item.href}
-                className={isActive(item.href) ? styles.tabActive : styles.tab}
-                href={item.href}
-              >
-                <Icon
-                  name={NAV_ICON[item.href as keyof typeof NAV_ICON] ?? "home"}
-                />
-                {item.label}
-              </ShellLink>
+                item={item}
+                active={!item.external && isActive(item.href)}
+              />
             ))}
           </nav>
         ) : null}
+        {variant === "security" ? <WebSecurityTabBar /> : null}
       </div>
     </div>
   );

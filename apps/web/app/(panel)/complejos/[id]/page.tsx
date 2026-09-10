@@ -27,7 +27,7 @@ export default async function ComplejoPage({
   const supabase = await createClient();
   const [{ data: complex }, { data: neighborhoods }, residentsByLot] =
     await Promise.all([
-      supabase.from("complexes").select("id, name").eq("id", id).maybeSingle(),
+      supabase.from("complexes").select("id, name, location").eq("id", id).maybeSingle(),
       supabase
         .from("neighborhoods")
         .select("id, name")
@@ -60,9 +60,15 @@ export default async function ComplejoPage({
         kicker="Complejo"
         title={complex.name}
         description={
-          superadmin
-            ? "Barrios de este complejo. Editalo o borralo si ya no aplica."
-            : "Barrios de tu complejo. Editalo y cargá barrios o lotes adentro."
+          complex.location
+            ? `${complex.location}. ${
+                superadmin
+                  ? "Barrios de este complejo. Editalo o borralo si ya no aplica."
+                  : "Barrios de tu complejo. Editalo y cargá barrios o lotes adentro."
+              }`
+            : superadmin
+              ? "Barrios de este complejo. Editalo o borralo si ya no aplica."
+              : "Barrios de tu complejo. Editalo y cargá barrios o lotes adentro."
         }
         actions={
           <>
