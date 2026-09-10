@@ -1,4 +1,5 @@
 import path from "node:path";
+import { getAccessApiUrl } from "./lib/access-api-url.js";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -6,10 +7,12 @@ const nextConfig = {
     root: path.join(import.meta.dirname, "../.."),
   },
   async rewrites() {
+    const apiBase = getAccessApiUrl();
+
     return [
       {
         source: "/access/:path*",
-        destination: "http://127.0.0.1:4000/access/:path*",
+        destination: `${apiBase}/access/:path*`,
       },
     ];
   },
