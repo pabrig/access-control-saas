@@ -1,5 +1,5 @@
 import path from "node:path";
-import { getAccessApiUrl } from "./lib/access-api-url.js";
+import { getAccessApiUrl } from "./lib/access-api-url.ts";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
