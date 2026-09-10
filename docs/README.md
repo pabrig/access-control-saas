@@ -25,7 +25,6 @@ A SaaS platform for managing entries and exits in gated communities and real est
 │   └── docs/         # Starter docs app (unused by the product)
 ├── packages/
 │   ├── db/           # Database TypeScript types
-│   ├── observability/ # Product events + structured logging helpers
 │   └── ui/           # Shared UI leftovers from the starter
 ├── supabase/
 │   ├── migrations/   # Schema + RLS
@@ -53,6 +52,6 @@ Seed logins (password `password123`):
 - `superadmin@example.com` — everything
 - `security@example.com` — active shift on the main gate
 
-## Observability
+## F&F production deploy
 
-See [OBSERVABILITY.md](./OBSERVABILITY.md) for the free-tier stack (Sentry, Vercel Analytics, Supabase logs, uptime).
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for Vercel (web + gate-web), Render/Docker (API), Supabase auth URLs, and smoke tests.

@@ -5,6 +5,7 @@ import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import { isSuperadmin, requireAdmin } from "@/lib/session";
 import { createComplex } from "../actions";
+import { ComplexFields } from "../complex-fields";
 
 export default async function NuevoComplejoPage({
   searchParams,
@@ -27,21 +28,13 @@ export default async function NuevoComplejoPage({
       <PageHeader
         kicker="Estructura"
         title="Nuevo complejo"
-        description="El complejo agrupa barrios. Después cargás barrios y lotes adentro."
+        description="Completá los datos básicos. Después podés agregar barrios y lotes."
       />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
       <section className={ui.card}>
         <form action={createComplex} className={ui.form}>
-          <label>
-            Nombre del complejo
-            <input
-              name="name"
-              required
-              maxLength={80}
-              placeholder="Ej. Master Plan Norte"
-            />
-          </label>
+          <ComplexFields />
           <button className={ui.button} type="submit">
             Crear complejo
           </button>

@@ -1,0 +1,10 @@
+/* Bottom bar for security on mobile; desktop uses sidebar nav. */
+.wrap {
+  display: contents;
+}
+
+@media (min-width: 900px) {
+  .wrap {
+    display: none;
+  }
+}

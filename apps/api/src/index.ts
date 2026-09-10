@@ -66,7 +66,7 @@ async function requireApiUser(req: express.Request, res: express.Response) {
   const {
     data: { user },
     error,
-  } = await userClient.auth.getUser();
+  } = await userClient.auth.getUser(token);
 
   if (error || !user) {
     res
@@ -179,6 +179,6 @@ app.post("/access/validate", async (req, res) => {
   }
 });
 
-app.listen(env.port, () => {
-  console.log(`API listening on http://127.0.0.1:${env.port}`);
+app.listen(env.port, "0.0.0.0", () => {
+  console.log(`API listening on port ${env.port}`);
 });

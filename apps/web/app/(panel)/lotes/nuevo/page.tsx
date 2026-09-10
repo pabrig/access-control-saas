@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Banner, Empty, PageHeader } from "@/components/ui";
+import { FormSection } from "@/components/form-section";
 import { Icon } from "@/components/icons";
 import ui from "@/components/ui.module.css";
 import {
@@ -70,37 +71,42 @@ export default async function NuevoLotePage({
       <PageHeader
         kicker="Comunidad"
         title="Nuevo lote"
-        description="Número, calle y contacto. El barrio ya tiene que existir."
+        description="Ubicación, superficie y contacto. El propietario se asigna desde Personas."
       />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
       <section className={ui.card}>
         <form action={createProperty} className={ui.form}>
-          {barrioAdmin && assignedBarrioId ? (
-            <input
-              type="hidden"
-              name="neighborhood_id"
-              value={assignedBarrioId}
-            />
-          ) : (
-            <label>
-              Barrio
-              <select
+          <FormSection
+            title="Barrio"
+            description="Dónde queda el lote dentro de la comunidad."
+          >
+            {barrioAdmin && assignedBarrioId ? (
+              <input
+                type="hidden"
                 name="neighborhood_id"
-                required
-                defaultValue={defaultBarrio}
-              >
-                <option value="" disabled>
-                  Elegí el barrio
-                </option>
-                {(neighborhoods ?? []).map((neighborhood) => (
-                  <option key={neighborhood.id} value={neighborhood.id}>
-                    {neighborhood.name}
+                value={assignedBarrioId}
+              />
+            ) : (
+              <label>
+                Barrio
+                <select
+                  name="neighborhood_id"
+                  required
+                  defaultValue={defaultBarrio}
+                >
+                  <option value="" disabled>
+                    Elegí el barrio
                   </option>
-                ))}
-              </select>
-            </label>
-          )}
+                  {(neighborhoods ?? []).map((neighborhood) => (
+                    <option key={neighborhood.id} value={neighborhood.id}>
+                      {neighborhood.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </FormSection>
           <LotFields />
           <button className={ui.button} type="submit">
             Guardar lote

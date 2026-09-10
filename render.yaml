@@ -1,0 +1,24 @@
+# Render Blueprint — access API for Friends & Family.
+# Dashboard: New → Blueprint → connect this repo, or create a Web Service manually.
+# Docs: docs/DEPLOYMENT.md
+
+services:
+  - type: web
+    name: nexo-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    startCommand: pnpm --filter api start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false

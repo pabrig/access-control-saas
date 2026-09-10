@@ -6,6 +6,7 @@ import ui from "@/components/ui.module.css";
 import { canManageComplex, requireAdmin } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { updateComplex } from "../../actions";
+import { ComplexFields } from "../../complex-fields";
 
 export default async function EditarComplejoPage({
   params,
@@ -24,7 +25,7 @@ export default async function EditarComplejoPage({
   const supabase = await createClient();
   const { data: complex } = await supabase
     .from("complexes")
-    .select("id, name")
+    .select("id, name, location")
     .eq("id", id)
     .maybeSingle();
 
@@ -41,22 +42,17 @@ export default async function EditarComplejoPage({
       <PageHeader
         kicker="Complejo"
         title="Editar complejo"
-        description="Cambiá el nombre. Los barrios siguen asociados."
+        description="Nombre y ubicación. Los barrios siguen asociados."
       />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
 
       <section className={ui.card}>
         <form action={updateComplex} className={ui.form}>
           <input type="hidden" name="id" value={complex.id} />
-          <label>
-            Nombre del complejo
-            <input
-              name="name"
-              required
-              maxLength={80}
-              defaultValue={complex.name}
-            />
-          </label>
+          <ComplexFields
+            defaultName={complex.name}
+            defaultLocation={complex.location}
+          />
           <button className={ui.button} type="submit">
             Guardar
           </button>
