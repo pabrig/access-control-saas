@@ -291,6 +291,14 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
   const sessionToken = useCallback(async () => {
     const supabase = createClient();
     const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (error || !user) {
+      return null;
+    }
+
+    const {
       data: { session },
     } = await supabase.auth.getSession();
     return session?.access_token ?? null;
