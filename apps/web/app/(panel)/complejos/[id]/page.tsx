@@ -27,7 +27,11 @@ export default async function ComplejoPage({
   const supabase = await createClient();
   const [{ data: complex }, { data: neighborhoods }, residentsByLot] =
     await Promise.all([
-      supabase.from("complexes").select("id, name, location").eq("id", id).maybeSingle(),
+      supabase
+        .from("complexes")
+        .select("id, name, location")
+        .eq("id", id)
+        .maybeSingle(),
       supabase
         .from("neighborhoods")
         .select("id, name")

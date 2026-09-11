@@ -31,27 +31,27 @@ export function WebSecurityTabBar() {
       <SecurityTabBar
         activeId={securityActiveId(pathname)}
         tabs={[
-        {
-          id: "home",
-          label: "Inicio",
-          href: "/",
-          icon: <Icon name="home" size={20} />,
-        },
-        {
-          id: "scan",
-          label: "Escanear",
-          href: scanUrl,
-          external: scanUrl.startsWith("http"),
-          primary: true,
-          icon: <Icon name="qr" size={24} />,
-        },
-        {
-          id: "movements",
-          label: "Movimientos",
-          href: "/movimientos",
-          icon: <Icon name="clock" size={20} />,
-        },
-      ]}
+          {
+            id: "home",
+            label: "Inicio",
+            href: "/",
+            icon: <Icon name="home" size={20} />,
+          },
+          {
+            id: "scan",
+            label: "Escanear",
+            href: scanUrl,
+            external: scanUrl.startsWith("http"),
+            primary: true,
+            icon: <Icon name="qr" size={24} />,
+          },
+          {
+            id: "movements",
+            label: "Movimientos",
+            href: "/movimientos",
+            icon: <Icon name="clock" size={20} />,
+          },
+        ]}
       />
     </div>
   );

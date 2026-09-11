@@ -727,7 +727,9 @@ export function ScanConsole({ apiUrl }: { apiUrl: string }) {
                         <strong>{movement.guestName ?? "Invitado"}</strong>
                         <span className={styles.feedMeta}>
                           {accessActionShort(movement.actionType)}
-                          {movement.lotLabel ? ` · Origen: ${movement.lotLabel}` : ""}
+                          {movement.lotLabel
+                            ? ` · Origen: ${movement.lotLabel}`
+                            : ""}
                         </span>
                       </span>
                       <span className={styles.feedTime}>

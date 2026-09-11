@@ -7,7 +7,8 @@ import { panelUrl } from "@/lib/panel-url";
 
 export function GateSecurityTabBar() {
   const pathname = usePathname();
-  const activeId = pathname === "/scan" || pathname.startsWith("/scan/") ? "scan" : null;
+  const activeId =
+    pathname === "/scan" || pathname.startsWith("/scan/") ? "scan" : null;
 
   return (
     <SecurityTabBar

@@ -55,13 +55,7 @@ function LinkPending() {
   return <span className={styles.linkPendingMark} data-pending="true" />;
 }
 
-function NavTab({
-  item,
-  active,
-}: {
-  item: NavItem;
-  active: boolean;
-}) {
+function NavTab({ item, active }: { item: NavItem; active: boolean }) {
   const className = active ? styles.tabActive : styles.tab;
   const icon =
     NAV_ICON[item.href as keyof typeof NAV_ICON] ??
@@ -153,8 +147,7 @@ export function AppShell({
                   name={
                     item.label === "Escanear"
                       ? "qr"
-                      : (NAV_ICON[item.href as keyof typeof NAV_ICON] ??
-                        "home")
+                      : (NAV_ICON[item.href as keyof typeof NAV_ICON] ?? "home")
                   }
                   size={18}
                 />

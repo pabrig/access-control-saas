@@ -19,7 +19,9 @@ export function requireLocation(value: FormDataEntryValue | null) {
 }
 
 export function parseSurfaceM2(value: FormDataEntryValue | null) {
-  const raw = String(value ?? "").trim().replace(",", ".");
+  const raw = String(value ?? "")
+    .trim()
+    .replace(",", ".");
   if (!raw) {
     return null;
   }
