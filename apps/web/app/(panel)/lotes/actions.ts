@@ -40,10 +40,7 @@ function lotFields(formData: FormData) {
   };
 }
 
-function validateLotFields(
-  fields: ReturnType<typeof lotFields>,
-  path: string,
-) {
+function validateLotFields(fields: ReturnType<typeof lotFields>, path: string) {
   if (!fields.lot_number) {
     fail(path, "El lote necesita un número.");
   }
