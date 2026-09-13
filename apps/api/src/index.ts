@@ -4,7 +4,7 @@ import { logStructured } from "@repo/observability/logger";
 import { corsOrigins, env } from "./env.js";
 import { lookupAccess } from "./lookup-access.js";
 import { captureApiError } from "./sentry.js";
-import { createUserClient } from "./supabase.js";
+import { serviceClient } from "./supabase.js";
 import { validateAccess } from "./validate-access.js";
 import {
   validateOwnerAccess,
@@ -62,13 +62,21 @@ async function requireApiUser(req: express.Request, res: express.Response) {
     return null;
   }
 
-  const userClient = createUserClient(token);
+  // Validate the user JWT via Auth using the service role. Prefer this over the
+  // anon client: projects on asymmetric signing keys (ES256) still mint valid
+  // user sessions, but anon/publishable key mismatches on the API host produce
+  // opaque "Invalid session" before invitation logic runs.
   const {
     data: { user },
     error,
-  } = await userClient.auth.getUser(token);
+  } = await serviceClient.auth.getUser(token);
 
   if (error || !user) {
+    logStructured("warn", {
+      event: "auth_invalid_session",
+      message: error?.message ?? "no user",
+      status: error?.status ?? null,
+    });
     res
       .status(401)
       .json({ ok: false, code: "UNAUTHENTICATED", message: "Invalid session" });
