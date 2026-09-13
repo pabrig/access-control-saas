@@ -162,6 +162,7 @@ export function PassComposer({
           name="is_single_use"
           value={singleUse ? "on" : ""}
         />
+        <input type="hidden" name="invite_kind" value={selected} />
         <label className={ui.check}>
           <input
             type="checkbox"
