@@ -263,11 +263,12 @@ export async function validateAccess(
   }
 
   if (commit) {
+    // Invitation rows must leave profile_id/property_id null — see
+    // access_logs_subject_check. property_id lives on invitations.
     const { error: insertError } = await serviceClient
       .from("access_logs")
       .insert({
         invitation_id: invitation.id,
-        property_id: invitation.property_id,
         gate_id: gateId,
         security_user_id: userId,
         action_type: actionType,
