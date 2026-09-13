@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { AutoRefresh } from "@/components/auto-refresh";
 import { DataTable } from "@/components/data-table";
 import { Banner, Empty, PageHeader, Stat } from "@/components/ui";
 import { Icon } from "@/components/icons";
@@ -43,14 +44,6 @@ type GateRel = {
   neighborhoods: Named | Named[] | null;
 };
 
-type InvitationRel = {
-  id: string;
-  guest_name: string | null;
-  neighborhood_id: string | null;
-  neighborhoods: Named | Named[] | null;
-  properties: PropertyRel | PropertyRel[] | null;
-};
-
 type PropertyRel = {
   id: string;
   lot_number: string;
@@ -66,6 +59,15 @@ type PropertyRel = {
         complexes?: Named | Named[] | null;
       })[]
     | null;
+};
+
+type InvitationRel = {
+  id: string;
+  guest_name: string | null;
+  invite_kind: "visit" | "provider" | null;
+  neighborhood_id: string | null;
+  neighborhoods: Named | Named[] | null;
+  properties: PropertyRel | PropertyRel[] | null;
 };
 
 type LogRow = {
@@ -169,8 +171,12 @@ function subjectKind(log: LogRow) {
   if (log.profile_id) {
     return "Propietario";
   }
-  if (isBookingLabel(asOne<InvitationRel>(log.invitations)?.guest_name)) {
+  const invitation = asOne<InvitationRel>(log.invitations);
+  if (isBookingLabel(invitation?.guest_name)) {
     return "Evento";
+  }
+  if (invitation?.invite_kind === "provider") {
+    return "Servicio";
   }
   return "Invitado";
 }
@@ -293,7 +299,7 @@ export default async function MovimientosPage({
   const { data: logs, error: logsError } = await supabase
     .from("access_logs")
     .select(
-      "id, action_type, timestamp, invitation_id, profile_id, property_id, gates(id, name, type, complex_id, neighborhood_id, complexes(id, name), neighborhoods(id, name)), invitations(id, guest_name, neighborhood_id, neighborhoods(id, name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name, complex_id, complexes(id, name)))), profiles!access_logs_security_user_id_fkey(first_name, last_name), resident:profiles!access_logs_profile_id_fkey(first_name, last_name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name, complex_id, complexes(id, name)))",
+      "id, action_type, timestamp, invitation_id, profile_id, property_id, gates(id, name, type, complex_id, neighborhood_id, complexes(id, name), neighborhoods(id, name)), invitations(id, guest_name, invite_kind, neighborhood_id, neighborhoods(id, name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name, complex_id, complexes(id, name)))), profiles!access_logs_security_user_id_fkey(first_name, last_name), resident:profiles!access_logs_profile_id_fkey(first_name, last_name), properties(id, lot_number, street_name, neighborhood_id, neighborhoods(id, name, complex_id, complexes(id, name)))",
     )
     .order("timestamp", { ascending: false })
     .limit(200);
@@ -311,8 +317,8 @@ export default async function MovimientosPage({
         title="Movimientos"
         description={
           ownerOnly
-            ? "Entradas y salidas de tu lote: invitados y propietarios."
-            : "Entradas y salidas del barrio: invitados y propietarios."
+            ? "Entradas y salidas de tu lote: invitados, servicio y propietarios."
+            : "Entradas y salidas del barrio: invitados, servicio y propietarios."
         }
       />
     );
@@ -349,9 +355,16 @@ function OwnerMovimientos({
   const entries = rows.filter((log) => !isExitAction(log.action_type)).length;
   const exits = rows.filter((log) => isExitAction(log.action_type)).length;
   const ownerEntries = rows.filter((log) => log.profile_id).length;
+  const guestEntries = rows.filter(
+    (log) => subjectKind(log) === "Invitado",
+  ).length;
+  const serviceEntries = rows.filter(
+    (log) => subjectKind(log) === "Servicio",
+  ).length;
 
   return (
     <>
+      <AutoRefresh intervalMs={30_000} />
       <PageHeader title={title} description={description} />
       {flash.error ? <Banner tone="danger">{flash.error}</Banner> : null}
       {flash.updated ? <Banner>Guardado.</Banner> : null}
@@ -360,6 +373,8 @@ function OwnerMovimientos({
         <Stat label="Registros" value={rows.length} />
         <Stat label="Entradas" value={entries} />
         <Stat label="Salidas" value={exits} />
+        <Stat label="Invitados" value={guestEntries} />
+        <Stat label="Servicio" value={serviceEntries} />
         <Stat label="Propietario" value={ownerEntries} />
       </section>
 

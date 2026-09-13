@@ -53,6 +53,8 @@ export async function createShareInvite(formData: FormData) {
   const validFromRaw = String(formData.get("valid_from") ?? "");
   const validToRaw = String(formData.get("valid_to") ?? "");
   const isSingleUse = formData.get("is_single_use") === "on";
+  const inviteKind =
+    formData.get("invite_kind") === "provider" ? "provider" : "visit";
 
   if (!propertyId || !validFromRaw || !validToRaw) {
     fail("Completá hasta cuándo vale la invitación.");
@@ -77,6 +79,7 @@ export async function createShareInvite(formData: FormData) {
     valid_from: validFrom.toISOString(),
     valid_to: validTo.toISOString(),
     is_single_use: isSingleUse,
+    invite_kind: inviteKind,
     status: "DRAFT",
     qr_token: null,
     guest_name: null,
@@ -104,6 +107,8 @@ export async function createDoorInvite(formData: FormData) {
   const validFromRaw = String(formData.get("valid_from") ?? "");
   const validToRaw = String(formData.get("valid_to") ?? "");
   const isSingleUse = formData.get("is_single_use") === "on";
+  const inviteKind =
+    formData.get("invite_kind") === "provider" ? "provider" : "visit";
 
   if (!guestName || !propertyId || !validFromRaw || !validToRaw) {
     fail("Para generar el QR acá hace falta el nombre y hasta cuándo vale.");
@@ -129,6 +134,7 @@ export async function createDoorInvite(formData: FormData) {
     valid_from: validFrom.toISOString(),
     valid_to: validTo.toISOString(),
     is_single_use: isSingleUse,
+    invite_kind: inviteKind,
     status: "READY",
     qr_token: crypto.randomUUID(),
   });

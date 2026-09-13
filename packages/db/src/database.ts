@@ -248,6 +248,7 @@ export type Database = {
           guest_dni: string | null;
           guest_name: string | null;
           id: string;
+          invite_kind: Database["public"]["Enums"]["invite_kind"];
           is_revoked: boolean;
           is_single_use: boolean;
           neighborhood_id: string;
@@ -264,6 +265,7 @@ export type Database = {
           guest_dni?: string | null;
           guest_name?: string | null;
           id?: string;
+          invite_kind?: Database["public"]["Enums"]["invite_kind"];
           is_revoked?: boolean;
           is_single_use?: boolean;
           neighborhood_id: string;
@@ -277,6 +279,7 @@ export type Database = {
         Update: {
           created_at?: string;
           created_by_user_id?: string;
+          invite_kind?: Database["public"]["Enums"]["invite_kind"];
           guest_dni?: string | null;
           guest_name?: string | null;
           id?: string;
@@ -773,6 +776,7 @@ export type Database = {
         | "EXPIRED";
       gate_type: "MAIN_COMPLEX" | "INTERNAL_NEIGHBORHOOD";
       invitation_lifecycle: "DRAFT" | "READY";
+      invite_kind: "visit" | "provider";
       plate_format: "AR_OLD" | "AR_MERCOSUR";
       resident_invite_status: "PENDING" | "ACCEPTED" | "REVOKED";
       role:
@@ -920,6 +924,7 @@ export const Constants = {
       ],
       gate_type: ["MAIN_COMPLEX", "INTERNAL_NEIGHBORHOOD"],
       invitation_lifecycle: ["DRAFT", "READY"],
+      invite_kind: ["visit", "provider"],
       plate_format: ["AR_OLD", "AR_MERCOSUR"],
       resident_invite_status: ["PENDING", "ACCEPTED", "REVOKED"],
       role: [
