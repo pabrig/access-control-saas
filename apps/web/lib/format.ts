@@ -82,7 +82,6 @@ export function initials(name: string | null | undefined) {
 }
 
 export function toLocalInput(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: APP_TIME_ZONE,
     year: "numeric",
